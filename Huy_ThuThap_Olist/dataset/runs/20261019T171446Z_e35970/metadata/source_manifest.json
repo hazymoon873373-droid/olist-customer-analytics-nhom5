@@ -1,0 +1,257 @@
+{
+  "run_id": "20261019T171446Z_e35970",
+  "started_at_utc": "2026-10-19T17:14:46.163177+00:00",
+  "status": "success",
+  "collector": "Nguyen Gia Huy - Nhom 5 - ABDA433708",
+  "errors": [],
+  "olist": {
+    "status": "success",
+    "source_page": "https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce",
+    "files": [
+      {
+        "file_name": "olist_customers_dataset.csv",
+        "record_count": 99441,
+        "column_count": 5,
+        "reference_record_count": 99441,
+        "reference_count_matches": true,
+        "physical_data_lines": 99441,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 9033957,
+        "sha256": "983a422239e1712ded753b3bf9ecf47dc73f144d306029dcfa99e70a226883d2",
+        "schema_valid": true,
+        "missing_by_column": {
+          "customer_id": 0,
+          "customer_unique_id": 0,
+          "customer_zip_code_prefix": 0,
+          "customer_city": 0,
+          "customer_state": 0
+        },
+        "description": "Bản ghi khách hàng gắn với đơn hàng, địa chỉ ở mức thành phố/bang.",
+        "key_notes": "customer_id; customer_unique_id nhận diện khách qua nhiều đơn"
+      },
+      {
+        "file_name": "olist_orders_dataset.csv",
+        "record_count": 99441,
+        "column_count": 8,
+        "reference_record_count": 99441,
+        "reference_count_matches": true,
+        "physical_data_lines": 99441,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 17654914,
+        "sha256": "8df58ef3d2d7e9944010f7beecd9b75367f5588ec6e3c91cec19ae3345ef9ecf",
+        "schema_valid": true,
+        "missing_by_column": {
+          "order_id": 0,
+          "customer_id": 0,
+          "order_status": 0,
+          "order_purchase_timestamp": 0,
+          "order_approved_at": 160,
+          "order_delivered_carrier_date": 1783,
+          "order_delivered_customer_date": 2965,
+          "order_estimated_delivery_date": 0
+        },
+        "description": "Đơn hàng, trạng thái và các thời điểm mua, duyệt, giao, dự kiến giao.",
+        "key_notes": "order_id; nối customers bằng customer_id"
+      },
+      {
+        "file_name": "olist_order_items_dataset.csv",
+        "record_count": 112650,
+        "column_count": 7,
+        "reference_record_count": 112650,
+        "reference_count_matches": true,
+        "physical_data_lines": 112650,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 15438671,
+        "sha256": "0bc4d068c4fe38cbb01bd90e8746e3c613fe7b4baef75fab7b0e329701c3e279",
+        "schema_valid": true,
+        "missing_by_column": {
+          "order_id": 0,
+          "order_item_id": 0,
+          "product_id": 0,
+          "seller_id": 0,
+          "shipping_limit_date": 0,
+          "price": 0,
+          "freight_value": 0
+        },
+        "description": "Chi tiết hàng hóa trong đơn; giá và phí vận chuyển bằng BRL.",
+        "key_notes": "Khóa ghép (order_id, order_item_id)"
+      },
+      {
+        "file_name": "olist_order_payments_dataset.csv",
+        "record_count": 103886,
+        "column_count": 5,
+        "reference_record_count": 103886,
+        "reference_count_matches": true,
+        "physical_data_lines": 103886,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 5777138,
+        "sha256": "4f713964f2815dbbaa40b9488268c55aac3627bfce5aa96cf58d1f3616de3cc0",
+        "schema_valid": true,
+        "missing_by_column": {
+          "order_id": 0,
+          "payment_sequential": 0,
+          "payment_type": 0,
+          "payment_installments": 0,
+          "payment_value": 0
+        },
+        "description": "Thanh toán; một đơn có thể có nhiều phương thức hoặc dòng thanh toán.",
+        "key_notes": "Khóa ứng viên (order_id, payment_sequential), cần kiểm định ở bước ETL"
+      },
+      {
+        "file_name": "olist_order_reviews_dataset.csv",
+        "record_count": 99224,
+        "column_count": 7,
+        "reference_record_count": 99224,
+        "reference_count_matches": true,
+        "physical_data_lines": 104719,
+        "extra_lines_inside_records": 5495,
+        "file_size_bytes": 14451670,
+        "sha256": "012b61c7593e34f51fa614efdf802b9c7056ce6aae5307ddb93236e7cfc797d7",
+        "schema_valid": true,
+        "missing_by_column": {
+          "review_id": 0,
+          "order_id": 0,
+          "review_score": 0,
+          "review_comment_title": 87656,
+          "review_comment_message": 58247,
+          "review_creation_date": 0,
+          "review_answer_timestamp": 0
+        },
+        "description": "Đánh giá đơn hàng; bình luận có thể chứa dấu phẩy, dấu nháy và xuống dòng.",
+        "key_notes": "review_id/order_id cần kiểm định; không giả định quan hệ 1-1"
+      },
+      {
+        "file_name": "olist_products_dataset.csv",
+        "record_count": 32951,
+        "column_count": 9,
+        "reference_record_count": 32951,
+        "reference_count_matches": true,
+        "physical_data_lines": 32951,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 2379446,
+        "sha256": "3e6569628a17fbc75fd206ee357b59e20364b9afa90f5b6cd5b4d624c58aa9cc",
+        "schema_valid": true,
+        "missing_by_column": {
+          "product_id": 0,
+          "product_category_name": 610,
+          "product_name_lenght": 610,
+          "product_description_lenght": 610,
+          "product_photos_qty": 610,
+          "product_weight_g": 2,
+          "product_length_cm": 2,
+          "product_height_cm": 2,
+          "product_width_cm": 2
+        },
+        "description": "Thông tin danh mục, kích thước, trọng lượng và độ dài mô tả sản phẩm.",
+        "key_notes": "product_id"
+      },
+      {
+        "file_name": "olist_sellers_dataset.csv",
+        "record_count": 3095,
+        "column_count": 4,
+        "reference_record_count": 3095,
+        "reference_count_matches": true,
+        "physical_data_lines": 3095,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 174703,
+        "sha256": "1f643d2b950373b85735e7794b20986f528d7a000432e7c6f9bcbb44d0846a0e",
+        "schema_valid": true,
+        "missing_by_column": {
+          "seller_id": 0,
+          "seller_zip_code_prefix": 0,
+          "seller_city": 0,
+          "seller_state": 0
+        },
+        "description": "Người bán và vị trí ở mức tiền tố bưu chính, thành phố, bang.",
+        "key_notes": "seller_id"
+      },
+      {
+        "file_name": "olist_geolocation_dataset.csv",
+        "record_count": 1000163,
+        "column_count": 5,
+        "reference_record_count": 1000163,
+        "reference_count_matches": true,
+        "physical_data_lines": 1000163,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 61273883,
+        "sha256": "b514f6fc991b9566aeba02aa5d67e2c3630f034b60a0e05aa0d082a3b66d88d6",
+        "schema_valid": true,
+        "missing_by_column": {
+          "geolocation_zip_code_prefix": 0,
+          "geolocation_lat": 0,
+          "geolocation_lng": 0,
+          "geolocation_city": 0,
+          "geolocation_state": 0
+        },
+        "description": "Tọa độ địa lý theo tiền tố bưu chính; nhiều tọa độ có thể cùng tiền tố.",
+        "key_notes": "Không mặc định zip_code_prefix là khóa duy nhất"
+      },
+      {
+        "file_name": "product_category_name_translation.csv",
+        "record_count": 71,
+        "column_count": 2,
+        "reference_record_count": 71,
+        "reference_count_matches": true,
+        "physical_data_lines": 71,
+        "extra_lines_inside_records": 0,
+        "file_size_bytes": 2613,
+        "sha256": "a81f0d1f27b27e7293f761bc79e3ce8f348ee39c4b3ed3e49bde38f478586278",
+        "schema_valid": true,
+        "missing_by_column": {
+          "product_category_name": 0,
+          "product_category_name_english": 0
+        },
+        "description": "Bảng dịch tên danh mục sản phẩm sang tiếng Anh.",
+        "key_notes": "product_category_name"
+      }
+    ],
+    "mode": "https_kaggle_download",
+    "http_receipt": {
+      "requested_url": "https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce",
+      "final_host": "storage.googleapis.com",
+      "http_status": 200,
+      "content_type": "application/zip",
+      "content_encoding": "identity",
+      "etag": "\"f2f3704ec08d55ef94fc2887bdc96472\"",
+      "last_modified": "Fri, 01 Oct 2021 19:08:57 GMT",
+      "started_at_utc": "2026-10-19T17:14:46.164121+00:00",
+      "retrieved_at_utc": "2026-10-19T17:14:52.045016+00:00",
+      "response_body_bytes": 44717580,
+      "response_sha256": "967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784"
+    },
+    "archive_sha256": "967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784"
+  },
+  "ibge": {
+    "status": "success",
+    "documentation": "https://servicodados.ibge.gov.br/api/docs/localidades",
+    "endpoint": "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome",
+    "mode": "https_api",
+    "http_receipt": {
+      "requested_url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome",
+      "final_host": "servicodados.ibge.gov.br",
+      "http_status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "content_encoding": "gzip",
+      "etag": null,
+      "last_modified": null,
+      "started_at_utc": "2026-10-19T17:14:55.301653+00:00",
+      "retrieved_at_utc": "2026-10-19T17:14:56.998846+00:00",
+      "response_body_bytes": 506,
+      "response_sha256": "8b9d8fa312c3d00dbeddddf579217068355f1457ebfb5a6f9ff9e5418282c200"
+    },
+    "record_count": 27,
+    "json_bytes": 2446,
+    "json_sha256": "6b001067b04e037095410ce8d33e11a2d77bf63750354a09608b12f086324f04",
+    "description": "27 đơn vị liên bang và 5 vùng lớn Brazil; nối Olist.customer_state = IBGE.sigla",
+    "temporal_scope": "Tham chiếu địa lý tại thời điểm tải; không phải dữ liệu kinh tế lịch sử 2016-2018",
+    "license_note": "Giữ nguồn IBGE; chưa khẳng định mã giấy phép riêng cho endpoint"
+  },
+  "join_coverage": {
+    "join_rule": "Olist.customer_state = IBGE.sigla",
+    "customer_records": 99441,
+    "matched_records": 99441,
+    "coverage_percent": 100.0,
+    "unmatched_state_codes": []
+  },
+  "finished_at_utc": "2026-10-19T17:14:57.198059+00:00"
+}

@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Huy - Thu thap Olist + API IBGE (chay tat ca)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/source-code/collect_all.py",
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "env": {"PYTHONDONTWRITEBYTECODE": "1"},
+      "justMyCode": true
+    }
+  ]
+}

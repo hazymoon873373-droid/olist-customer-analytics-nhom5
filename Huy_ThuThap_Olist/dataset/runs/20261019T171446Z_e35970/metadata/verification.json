@@ -1,0 +1,116 @@
+{
+  "run_id": "20261019T171446Z_e35970",
+  "run_path": "D:\\Big Data\\olist-customer-analytics-nhom5\\Huy_ThuThap_Olist\\dataset\\runs\\20261019T171446Z_e35970",
+  "verified_at_bangkok": "2026-10-24T23:25:40.060999+07:00",
+  "all_passed": true,
+  "checks": [
+    {
+      "check": "Thư mục dữ liệu đang mở tồn tại",
+      "passed": true,
+      "evidence": "D:\\Big Data\\olist-customer-analytics-nhom5\\Huy_ThuThap_Olist\\dataset\\runs\\20261019T171446Z_e35970"
+    },
+    {
+      "check": "Đường dẫn bàn giao tương đối trỏ đúng dữ liệu",
+      "passed": true,
+      "evidence": "dataset/latest_success.json -> runs/20261019T171446Z_e35970"
+    },
+    {
+      "check": "F5 trỏ đúng mã nguồn sau khi dọn",
+      "passed": true,
+      "evidence": "D:\\Big Data\\olist-customer-analytics-nhom5\\Huy_ThuThap_Olist\\source-code\\collect_all.py"
+    },
+    {
+      "check": "Tải Olist qua HTTPS từ Kaggle",
+      "passed": true,
+      "evidence": "https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce"
+    },
+    {
+      "check": "Gọi IBGE API trực tiếp",
+      "passed": true,
+      "evidence": "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome"
+    },
+    {
+      "check": "Trạng thái chạy hoàn tất",
+      "passed": true,
+      "evidence": "Run 20261019T171446Z_e35970; kết thúc 2026-10-19T17:14:57.198059+00:00"
+    },
+    {
+      "check": "ZIP gốc đúng checksum HTTP",
+      "passed": true,
+      "evidence": "967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784"
+    },
+    {
+      "check": "Raw CSV: olist_customers_dataset.csv",
+      "passed": true,
+      "evidence": "99,441 record, 9,033,957 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_orders_dataset.csv",
+      "passed": true,
+      "evidence": "99,441 record, 17,654,914 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_order_items_dataset.csv",
+      "passed": true,
+      "evidence": "112,650 record, 15,438,671 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_order_payments_dataset.csv",
+      "passed": true,
+      "evidence": "103,886 record, 5,777,138 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_order_reviews_dataset.csv",
+      "passed": true,
+      "evidence": "99,224 record, 14,451,670 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_products_dataset.csv",
+      "passed": true,
+      "evidence": "32,951 record, 2,379,446 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_sellers_dataset.csv",
+      "passed": true,
+      "evidence": "3,095 record, 174,703 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: olist_geolocation_dataset.csv",
+      "passed": true,
+      "evidence": "1,000,163 record, 61,273,883 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Raw CSV: product_category_name_translation.csv",
+      "passed": true,
+      "evidence": "71 record, 2,613 byte; CSV nguyên vẹn so với ZIP và manifest"
+    },
+    {
+      "check": "Lưu response IBGE và JSON raw nguyên vẹn",
+      "passed": true,
+      "evidence": "27 record; 2,446 byte JSON"
+    },
+    {
+      "check": "Nguồn phụ ghép được với Olist",
+      "passed": true,
+      "evidence": "Khớp 99,441/99,441 bản ghi khách hàng"
+    },
+    {
+      "check": "Bảng đếm khớp file thực tế",
+      "passed": true,
+      "evidence": "10 tệp dữ liệu trên 2 nguồn"
+    },
+    {
+      "check": "Có mô tả đầy đủ các trường",
+      "passed": true,
+      "evidence": "58 trường có tên, kiểu đề xuất và ý nghĩa"
+    },
+    {
+      "check": "Có nhật ký và báo cáo",
+      "passed": true,
+      "evidence": "Có log đầy đủ 5 bước và thông tin dữ liệu"
+    }
+  ],
+  "olist_records": 1550922,
+  "ibge_records": 27,
+  "scope": "5 yêu cầu thu thập của Huy; không chứng nhận điểm hoặc toàn bộ đồ án"
+}

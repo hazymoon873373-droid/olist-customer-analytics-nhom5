@@ -1,0 +1,25 @@
+2026-10-20 00:14:46,163 | INFO | BẮT ĐẦU THU THẬP - run 20261019T171446Z_e35970
+2026-10-20 00:14:46,163 | INFO | Thư mục kết quả: D:\Big Data\Huy_ThuThap_Olist\data\runs\20261019T171446Z_e35970
+2026-10-20 00:14:46,163 | INFO | [1/5] Tải dataset Olist từ Kaggle
+2026-10-20 00:14:49,272 | INFO | Đã tải 10.0 MiB...
+2026-10-20 00:14:49,844 | INFO | Đã tải 20.0 MiB...
+2026-10-20 00:14:51,075 | INFO | Đã tải 30.0 MiB...
+2026-10-20 00:14:51,966 | INFO | Đã tải 40.0 MiB...
+2026-10-20 00:14:52,171 | INFO | [2/5] Lưu 9 CSV raw và đếm bản ghi bằng CSV parser
+2026-10-20 00:14:52,916 | INFO | olist_customers_dataset.csv                  99,441 record |  5 cột
+2026-10-20 00:14:53,207 | INFO | olist_orders_dataset.csv                     99,441 record |  8 cột
+2026-10-20 00:14:53,477 | INFO | olist_order_items_dataset.csv               112,650 record |  7 cột
+2026-10-20 00:14:53,635 | INFO | olist_order_payments_dataset.csv            103,886 record |  5 cột
+2026-10-20 00:14:53,918 | INFO | olist_order_reviews_dataset.csv              99,224 record |  7 cột
+2026-10-20 00:14:54,005 | INFO | olist_products_dataset.csv                   32,951 record |  9 cột
+2026-10-20 00:14:54,029 | INFO | olist_sellers_dataset.csv                     3,095 record |  4 cột
+2026-10-20 00:14:55,296 | INFO | olist_geolocation_dataset.csv             1,000,163 record |  5 cột
+2026-10-20 00:14:55,301 | INFO | product_category_name_translation.csv            71 record |  2 cột
+2026-10-20 00:14:55,301 | INFO | [3/5] Gọi API IBGE - bang/vùng Brazil
+2026-10-20 00:14:57,018 | INFO | IBGE: 27 bản ghi; 5 vùng lớn
+2026-10-20 00:14:57,197 | INFO | Ghép customer_state với sigla: 100.00%
+2026-10-20 00:14:57,198 | INFO | [4/5] Ghi nguồn, mô tả raw, data dictionary và checksum
+2026-10-20 00:14:57,205 | INFO | [5/5] HOÀN THÀNH
+2026-10-20 00:14:57,205 | INFO | Olist: 1,550,922 record | IBGE: 27 record
+2026-10-20 00:14:57,205 | INFO | Báo cáo: D:\Big Data\Huy_ThuThap_Olist\data\runs\20261019T171446Z_e35970\KET_QUA_THU_THAP.md
+2026-10-20 00:14:57,205 | INFO | Báo cáo HTML: D:\Big Data\Huy_ThuThap_Olist\data\runs\20261019T171446Z_e35970\KET_QUA_THU_THAP.html
