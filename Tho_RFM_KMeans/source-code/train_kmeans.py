@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 import sys
 import time
 import tracemalloc
@@ -293,6 +294,63 @@ def save_pca_chart(x_scaled, rfm, output_file):
     plt.close(fig)
 
 
+def save_recency_monetary_chart(rfm, output_file):
+    sample_size = min(25000, len(rfm))
+    plot_data = rfm.sample(sample_size, random_state=RANDOM_STATE)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.scatterplot(
+        data=plot_data,
+        x="recency",
+        y="monetary",
+        hue="segment",
+        s=18,
+        alpha=0.55,
+        ax=ax,
+    )
+    ax.set_yscale("log")
+    ax.set_title("Recency và Monetary theo phân khúc")
+    ax.set_xlabel("Recency (ngày)")
+    ax.set_ylabel("Monetary (BRL, thang log)")
+    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_file, dpi=250, bbox_inches="tight")
+    plt.close(fig)
+
+
+def save_text_result(metrics, profiles, output_file):
+    display_columns = [
+        "segment",
+        "customer_count",
+        "percentage",
+        "recency_mean",
+        "frequency_mean",
+        "monetary_mean",
+    ]
+    profile_text = profiles[display_columns].round(2).to_string()
+
+    content = (
+        "KẾT QUẢ HUẤN LUYỆN MÔ HÌNH PHÂN CỤM KHÁCH HÀNG K-MEANS\n\n"
+        f"- Số khách hàng: {metrics['customer_count']:,}\n"
+        f"- Ngày tham chiếu RFM: {metrics['reference_date']}\n"
+        f"- Số cụm K được chọn: {metrics['selected_k']}\n"
+        f"- K theo Silhouette tốt nhất: {metrics['metric_best_k']}\n"
+        f"- K tại điểm Elbow: {metrics['elbow_k']}\n"
+        f"- Inertia (WCSS): {metrics['inertia']:.2f}\n"
+        f"- Silhouette Score: {metrics['silhouette']:.4f}\n"
+        f"- Davies-Bouldin Index: {metrics['davies_bouldin']:.4f}\n"
+        f"- Calinski-Harabasz Score: {metrics['calinski_harabasz']:.2f}\n"
+        f"- Stability ARI: {metrics['stability_ari']:.4f}\n"
+        f"- Thời gian huấn luyện: {metrics['train_time_seconds']:.4f}s\n"
+        f"- RAM tiêu thụ đỉnh: {metrics['peak_memory_mb']:.2f} MB\n\n"
+        "LÝ DO CHỌN K\n"
+        f"{metrics['selection_reason']}\n\n"
+        "BẢNG ĐẶC TRƯNG PHÂN CỤM\n"
+        f"{profile_text}\n"
+    )
+    output_file.write_text(content, encoding="utf-8")
+
+
 def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, final_k=None):
     output_dir.mkdir(parents=True, exist_ok=True)
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -400,13 +458,24 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
         "selected_k": selected_k,
     }
     joblib.dump(model_bundle, model_dir / "rfm_kmeans_pipeline.joblib")
+    joblib.dump(model_bundle, model_dir / "kmeans_rfm_pipeline.pkl")
 
     final_scaled = model_pipeline[:-1].transform(rfm[FEATURE_COLUMNS])
-    save_k_chart(evaluation, selected_k, chart_dir / "01_k_evaluation.png")
+    k_chart = chart_dir / "01_k_evaluation.png"
+    pca_chart = chart_dir / "05_kmeans_pca.png"
+    rm_chart = chart_dir / "06_recency_monetary.png"
+
+    save_k_chart(evaluation, selected_k, k_chart)
     save_rfm_distribution(rfm, chart_dir / "02_rfm_distribution.png")
     save_cluster_size(profiles, chart_dir / "03_cluster_size.png")
     save_profile_heatmap(profiles, chart_dir / "04_cluster_profile_heatmap.png")
-    save_pca_chart(final_scaled, rfm, chart_dir / "05_kmeans_pca.png")
+    save_pca_chart(final_scaled, rfm, pca_chart)
+    save_recency_monetary_chart(rfm, rm_chart)
+
+    save_text_result(metrics, profiles, output_dir / "Ketqua_KMeans.txt")
+    shutil.copy2(k_chart, output_dir / "KMeans_Elbow_Silhouette.png")
+    shutil.copy2(pca_chart, output_dir / "KMeans_Clusters_2D_PCA.png")
+    shutil.copy2(rm_chart, output_dir / "KMeans_Recency_vs_Monetary.png")
 
     print("\nKẾT QUẢ K-MEANS")
     print(f"Số khách hàng: {len(rfm):,}")

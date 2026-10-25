@@ -1,0 +1,25 @@
+KẾT QUẢ HUẤN LUYỆN MÔ HÌNH PHÂN CỤM KHÁCH HÀNG K-MEANS
+
+- Số khách hàng: 93,358
+- Ngày tham chiếu RFM: 2018-08-30
+- Số cụm K được chọn: 4
+- K theo Silhouette tốt nhất: 2
+- K tại điểm Elbow: 4
+- Inertia (WCSS): 83293.01
+- Silhouette Score: 0.3918
+- Davies-Bouldin Index: 0.7591
+- Calinski-Harabasz Score: 73517.00
+- Stability ARI: 0.9992
+- Thời gian huấn luyện: 0.9604s
+- RAM tiêu thụ đỉnh: 14.98 MB
+
+LÝ DO CHỌN K
+Chọn điểm elbow vì các cụm ổn định, không có cụm quá nhỏ và số nhóm phù hợp để xây dựng chính sách khách hàng.
+
+BẢNG ĐẶC TRƯNG PHÂN CỤM
+                                                    segment  customer_count  percentage  recency_mean  frequency_mean  monetary_mean
+cluster                                                                                                                             
+0        At-Risk High Spenders (Chi tiêu cao, lâu chưa mua)           37665       40.34        278.98            1.00         237.26
+1        Hibernating Low-Value (Lâu chưa mua, giá trị thấp)           36601       39.20        285.20            1.00          45.10
+2                     Champions / Loyal (Khách mua lặp lại)            2801        3.00        220.81            2.11         260.05
+3                         Recent Active (Khách mua gần đây)           16291       17.45         42.93            1.00         116.99

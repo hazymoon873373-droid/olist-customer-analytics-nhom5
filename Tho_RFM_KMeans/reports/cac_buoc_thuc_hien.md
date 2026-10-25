@@ -61,7 +61,10 @@ Tên cụm được gán từ hồ sơ RFM sau khi train, không gắn cố đ�
 - `outputs/cluster_profiles.csv`: đặc trưng bốn cụm.
 - `outputs/model_metrics.json`: metric chính.
 - `models/rfm_kmeans_pipeline.joblib`: model dùng cho ứng dụng.
-- `outputs/charts/`: năm biểu đồ phục vụ báo cáo.
+- `outputs/charts/`: sáu biểu đồ phục vụ báo cáo.
+- `outputs/Ketqua_KMeans.txt`: kết quả dạng văn bản.
+- `outputs/rfm_kmeans_summary.xlsx`: bảng Excel gồm metric, hồ sơ cụm và đánh giá K.
+- `models/kmeans_rfm_pipeline.pkl`: bản model mang tên tương thích với kết quả cũ.
 
 ## 7. Kiểm tra
 

@@ -26,6 +26,12 @@ python -m pip install -r Tho_RFM_KMeans/requirements.txt
 python -B Tho_RFM_KMeans/source-code/train_kmeans.py
 ```
 
+Có thể dùng tên file tương thích với phiên bản cũ:
+
+```powershell
+python -B Tho_RFM_KMeans/source-code/kmeans_rfm.py
+```
+
 Hoặc truyền đường dẫn trực tiếp:
 
 ```powershell
@@ -72,3 +78,5 @@ Tho_RFM_KMeans/
 ```
 
 Model lưu cả bước `log1p` và chuẩn hóa. Khi dự đoán chỉ cần đưa vào ba cột `recency`, `frequency`, `monetary`, không xử lý lại bằng tay.
+
+Các file mang tên giống phiên bản cũ gồm `Ketqua_KMeans.txt`, `rfm_kmeans_summary.xlsx`, ba biểu đồ `KMeans_*.png` và `kmeans_rfm_pipeline.pkl`. Nhóm có thể thay trực tiếp thư mục kết quả cũ mà không cần đổi tên file.
