@@ -10,7 +10,7 @@
   "calinski_harabasz": 73516.99600103206,
   "stability_ari": 0.9991696961953982,
   "inertia": 83293.0134869091,
-  "train_time_seconds": 0.9100095000003421,
-  "peak_memory_mb": 14.982123374938965,
+  "train_time_seconds": 1.8731362999997145,
+  "peak_memory_mb": 14.982267379760742,
   "input_rule": "Chỉ lấy đơn delivered; Monetary là tổng total_products_value."
 }

@@ -26,7 +26,12 @@ def predict_clusters(model_file, input_file, output_file):
     df["segment"] = df["cluster"].map(bundle["cluster_mapping"])
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_file, index=False, encoding="utf-8-sig")
+    df.to_csv(
+        output_file,
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
     print(f"Đã gán cụm cho {len(df):,} khách hàng")
     print(f"Đã lưu: {output_file}")
 

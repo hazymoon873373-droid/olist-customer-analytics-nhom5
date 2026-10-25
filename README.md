@@ -21,6 +21,8 @@ Thư mục `Huy_ThuThap_Olist/` chứa code Python, cấu hình VS Code, snapsho
 
 Snapshot: `20261019T171446Z_e35970`. Có 9 CSV Olist (99.441 đơn hàng) và JSON IBGE (27 đơn vị liên bang). Các số lượng cộng giữa nhiều bảng không phải số khách hàng duy nhất.
 
+Nhánh `codex/tho-machine-learning` có thêm thư mục `Tho_RFM_KMeans/`. Phần này tạo lại bảng RFM từ order master, đánh giá K từ 2 đến 10 và huấn luyện K-Means với K=4. Model, bảng gán nhãn, biểu đồ và nội dung báo cáo được lưu cùng thư mục.
+
 ## Bắt đầu
 
 ```powershell

@@ -122,7 +122,12 @@ def main():
     rfm, reference_date = build_rfm(order_master)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    rfm.to_csv(args.output, index=False, encoding="utf-8-sig")
+    rfm.to_csv(
+        args.output,
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
 
     print(f"Số đơn trong order master: {len(order_master):,}")
     print(f"Số khách hàng trong bảng RFM: {len(rfm):,}")

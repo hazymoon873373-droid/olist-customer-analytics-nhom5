@@ -301,7 +301,12 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
 
     order_master = read_order_master(order_master_file)
     rfm, reference_date = build_rfm(order_master)
-    rfm.to_csv(output_dir / "rfm_rebuilt.csv", index=False, encoding="utf-8-sig")
+    rfm.to_csv(
+        output_dir / "rfm_rebuilt.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
 
     preprocessor = make_preprocessor()
     x_scaled = preprocessor.fit_transform(rfm[FEATURE_COLUMNS])
@@ -364,14 +369,27 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
         "input_rule": "Chỉ lấy đơn delivered; Monetary là tổng total_products_value.",
     }
 
-    evaluation.to_csv(output_dir / "k_evaluation.csv", index=False, encoding="utf-8-sig")
+    evaluation.to_csv(
+        output_dir / "k_evaluation.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
     profiles.reset_index().to_csv(
-        output_dir / "cluster_profiles.csv", index=False, encoding="utf-8-sig"
+        output_dir / "cluster_profiles.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
     )
     rfm.to_csv(
-        output_dir / "rfm_customers_kmeans.csv", index=False, encoding="utf-8-sig"
+        output_dir / "rfm_customers_kmeans.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
     )
-    with (output_dir / "model_metrics.json").open("w", encoding="utf-8") as file:
+    with (output_dir / "model_metrics.json").open(
+        "w", encoding="utf-8", newline="\n"
+    ) as file:
         json.dump(metrics, file, ensure_ascii=False, indent=2)
 
     model_bundle = {
