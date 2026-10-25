@@ -11,3 +11,7 @@ kaggle.json
 node_modules/
 .DS_Store
 Thumbs.db
+
+# Du lieu dau vao cua phan RFM - dat local, khong commit
+Tho_RFM_KMeans/data/*.csv
+!Tho_RFM_KMeans/data/.gitkeep
