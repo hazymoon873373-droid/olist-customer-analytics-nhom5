@@ -140,6 +140,31 @@ def calculate_metrics(y_true, y_pred, churn_probability):
     }
 
 
+def make_classification_report_table(y_true, y_pred):
+    report = classification_report(
+        y_true,
+        y_pred,
+        labels=[0, 1],
+        target_names=["Quay_lai_0", "Churn_1"],
+        output_dict=True,
+        zero_division=0,
+    )
+    rows = []
+    for label in ["Quay_lai_0", "Churn_1", "macro avg", "weighted avg"]:
+        rows.append({"class": label, **report[label]})
+    rows.insert(
+        2,
+        {
+            "class": "accuracy",
+            "precision": np.nan,
+            "recall": np.nan,
+            "f1-score": report["accuracy"],
+            "support": len(y_true),
+        },
+    )
+    return pd.DataFrame(rows)
+
+
 def save_charts(
     y_test,
     y_pred,
@@ -356,18 +381,12 @@ def main():
     baseline_prediction = np.ones(len(y_test), dtype=int)
     baseline_metrics = calculate_metrics(y_test, baseline_prediction, test_probability)
 
-    report = classification_report(
-        y_test,
-        test_prediction,
-        labels=[0, 1],
-        target_names=["Quay_lai_0", "Churn_1"],
-        output_dict=True,
-        zero_division=0,
-    )
-    report_table = pd.DataFrame(report).transpose().reset_index()
-    report_table = report_table.rename(columns={"index": "class"})
+    report_table = make_classification_report_table(y_test, test_prediction)
     report_table.to_csv(
-        output_dir / "classification_report.csv", index=False, encoding="utf-8-sig"
+        output_dir / "classification_report.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
     )
 
     matrix = confusion_matrix(y_test, test_prediction, labels=[0, 1])
