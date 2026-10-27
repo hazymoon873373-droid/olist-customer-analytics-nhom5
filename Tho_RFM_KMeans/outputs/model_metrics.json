@@ -1,0 +1,16 @@
+{
+  "customer_count": 93358,
+  "reference_date": "2018-08-30",
+  "selected_k": 4,
+  "elbow_k": 4,
+  "metric_best_k": 2,
+  "selection_reason": "Chọn điểm elbow vì các cụm ổn định, không có cụm quá nhỏ và số nhóm phù hợp để xây dựng chính sách khách hàng.",
+  "silhouette": 0.39180847491708615,
+  "davies_bouldin": 0.7591347612502135,
+  "calinski_harabasz": 73516.99600103206,
+  "stability_ari": 0.9991696961953982,
+  "inertia": 83293.0134869091,
+  "train_time_seconds": 0.9604073000000426,
+  "peak_memory_mb": 14.98349380493164,
+  "input_rule": "Chỉ lấy đơn delivered; Monetary là tổng total_products_value."
+}

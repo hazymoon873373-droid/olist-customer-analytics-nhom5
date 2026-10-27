@@ -1,0 +1,5 @@
+﻿cluster,customer_count,recency_mean,recency_median,frequency_mean,frequency_median,monetary_mean,monetary_median,percentage,segment
+0,37665,278.97568033983805,262.0,1.0,1.0,237.25981494756405,150.0,40.34469461642281,"At-Risk High Spenders (Chi tiêu cao, lâu chưa mua)"
+1,36601,285.1958689653288,269.0,1.0,1.0,45.102296931777815,44.99,39.20499582253262,"Hibernating Low-Value (Lâu chưa mua, giá trị thấp)"
+2,2801,220.8093538022135,200.0,2.1138878971795787,2.0,260.05310603355946,182.1,3.0002784978255748,Champions / Loyal (Khách mua lặp lại)
+3,16291,42.92867227303419,38.0,1.0,1.0,116.99154502486036,83.99,17.450031063219008,Recent Active (Khách mua gần đây)
