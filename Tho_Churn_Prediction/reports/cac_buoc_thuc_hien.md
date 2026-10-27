@@ -2,101 +2,112 @@
 
 ## 1. Xác định bài toán
 
-Bài toán được xây dựng dưới dạng phân loại nhị phân. Mục tiêu là dự đoán một khách hàng có ngừng mua trong 180 ngày tiếp theo hay không.
-
-Do Olist không có cột churn chính thức, nhãn trong bài là nhãn thay thế:
+Bài toán dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Do Olist không có cột churn chính thức, nhãn trong bài là nhãn thay thế:
 
 ```text
+0 = có đơn delivered trong 180 ngày sau snapshot
 1 = không có đơn delivered trong 180 ngày sau snapshot
-0 = có ít nhất một đơn delivered trong 180 ngày sau snapshot
 ```
 
-Không gọi đây là khách rời bỏ vĩnh viễn vì dữ liệu kết thúc ngày 29/08/2018.
+## 2. Chọn nhóm khách hàng
 
-## 2. Chọn mốc thời gian
+Chỉ đưa một khách vào snapshot khi khách đó:
 
-- Snapshot: 02/03/2018 23:59:59.
-- Cửa sổ quan sát nhãn: 03/03/2018 đến 29/08/2018.
-- Độ dài cửa sổ: 180 ngày.
+1. Đã có ít nhất hai đơn `delivered`.
+2. Có mua hàng trong 180 ngày gần nhất.
 
-Mốc này cho phép dùng đủ phần dữ liệu còn lại để kiểm tra khách có quay lại hay không.
+Điều kiện này tránh gọi một người chỉ mua thử một lần là khách hàng đã rời bỏ.
 
-## 3. Lọc dữ liệu lịch sử
+## 3. Tạo rolling snapshot
 
-Feature chỉ lấy từ đơn thỏa cả ba điều kiện:
+Sử dụng 12 snapshot theo tháng, từ 01/04/2017 đến 01/03/2018. Mỗi snapshot phải còn đủ 180 ngày dữ liệu tương lai để tạo nhãn.
 
-1. `order_status = delivered`.
-2. `order_purchase_timestamp <= T0`.
-3. `order_delivered_customer_date <= T0`.
+Một khách có thể xuất hiện ở nhiều snapshot. Mỗi dòng có `sample_id` bằng mã khách kết hợp ngày snapshot.
 
-Điều kiện thứ ba loại các đơn đã đặt nhưng chưa giao tại thời điểm snapshot. Nhờ vậy feature không dùng thông tin chỉ xuất hiện sau `T0`.
+Kết quả có:
 
-Sau khi lọc có 54.173 đơn lịch sử của 52.522 khách hàng.
+- 5.920 mẫu customer-snapshot.
+- 1.484 khách hàng khác nhau.
+- 299 mẫu quay lại.
+- 5.621 mẫu churn proxy.
 
-## 4. Tạo feature
+## 4. Tránh sử dụng thông tin tương lai
 
-Mỗi khách hàng có 18 feature:
+Đơn dùng để tính feature phải thỏa:
 
-| Nhóm | Feature | Cách tính |
-|---|---|---|
-| RFM | `recency` | Số ngày từ lần mua cuối đến `T0` |
-| RFM | `frequency` | Số đơn khác nhau trước `T0` |
-| RFM | `monetary` | Tổng giá trị sản phẩm trước `T0` |
-| Gần đây | `orders_last_30d`, `orders_last_90d`, `orders_last_180d` | Số đơn trong từng cửa sổ |
-| Gần đây | `spend_last_30d`, `spend_last_90d`, `spend_last_180d` | Chi tiêu sản phẩm trong từng cửa sổ |
-| Giá trị | `avg_order_value` | Monetary chia Frequency |
-| Thời gian | `customer_tenure_days` | Số ngày từ đơn đầu tiên đến `T0` |
-| Thời gian | `avg_days_between_orders` | Số ngày trung bình giữa hai lần mua |
-| Đơn hàng | `avg_items_per_order` | Số sản phẩm trung bình mỗi đơn |
-| Vận chuyển | `avg_freight_value` | Phí vận chuyển trung bình mỗi đơn |
-| Vận chuyển | `freight_to_product_ratio` | Tổng phí vận chuyển chia tổng giá trị sản phẩm |
-| Thanh toán | `avg_installments` | Số kỳ trả góp trung bình |
-| Địa lý | `customer_state`, `region_name` | Vị trí ở đơn gần nhất trước `T0` |
+- `order_status = delivered`.
+- Ngày mua không sau snapshot.
+- Ngày giao hàng không sau snapshot.
 
-Khách chỉ có một đơn sẽ thiếu `avg_days_between_orders`. Giá trị này được điền bằng median học từ tập train, đồng thời pipeline tạo thêm cột đánh dấu missing.
+Đơn mua trước snapshot nhưng giao sau snapshot không được dùng làm feature.
 
-## 5. Tạo nhãn
+## 5. Tạo feature
 
-Tìm các đơn `delivered` có thời gian mua sau `T0` và không muộn hơn 29/08/2018. Khách xuất hiện trong tập này nhận nhãn 0. Các khách còn lại nhận nhãn 1.
+Mô hình sử dụng 18 feature:
 
-Kết quả:
+| Nhóm | Feature |
+|---|---|
+| RFM | `recency`, `frequency`, `monetary` |
+| Gần đây | `orders_last_30d`, `orders_last_90d`, `orders_last_180d` |
+| Gần đây | `spend_last_30d`, `spend_last_90d`, `spend_last_180d` |
+| Giá trị đơn | `avg_order_value` |
+| Thời gian | `customer_tenure_days`, `avg_days_between_orders` |
+| Đơn hàng | `avg_items_per_order`, `avg_installments` |
+| Vận chuyển | `avg_freight_value`, `freight_to_product_ratio` |
+| Địa lý | `customer_state`, `region_name` |
 
-- Quay lại, nhãn 0: 595 khách.
-- Churn proxy, nhãn 1: 51.927 khách.
-- Tỷ lệ churn proxy: 98,87%.
+Các feature được tính lại tại từng snapshot.
 
-## 6. Chia dữ liệu
+## 6. Chia train và test trước khi huấn luyện
 
-Dữ liệu được chia 80% train và 20% test bằng:
+Dữ liệu được chia bằng `StratifiedGroupKFold` năm fold. Một fold được dùng làm test, tương đương khoảng 20% dữ liệu.
 
 ```text
-train_test_split(test_size=0.2, random_state=42, stratify=y)
+Train: 4.737 mẫu, 1.187 khách
+Test:  1.183 mẫu,   297 khách
+Khách trùng giữa hai tập: 0
 ```
 
-- Train: 42.017 khách.
-- Test: 10.505 khách.
+Việc chia theo `customer_unique_id` ngăn một snapshot của khách nằm ở train và snapshot khác của cùng khách nằm ở test.
 
-Tập test không tham gia chọn tham số và chọn ngưỡng.
+## 7. Pipeline tiền xử lý
 
-## 7. Tiền xử lý
-
-- Biến số: `SimpleImputer(strategy="median", add_indicator=True)`.
-- Biến phân loại: điền mode rồi `OneHotEncoder(handle_unknown="ignore")`.
-- Không dùng `StandardScaler` vì Random Forest không cần chuẩn hóa thang đo.
-
-Toàn bộ bước tiền xử lý nằm trong `Pipeline`, tránh học median hoặc danh mục từ tập test.
-
-## 8. Huấn luyện Random Forest
-
-Chỉ sử dụng Random Forest. Không huấn luyện thêm thuật toán cạnh tranh.
-
-Tám cấu hình được đánh giá bằng GridSearchCV 3-fold trên tập train. Tiêu chí chọn là macro F1 vì dữ liệu mất cân bằng. Tất cả cấu hình giữ `class_weight="balanced"`.
-
-Tham số được chọn:
+Biến số dùng:
 
 ```text
-n_estimators = 400
-max_depth = None
+SimpleImputer(strategy="median", add_indicator=True)
+```
+
+Biến phân loại dùng:
+
+```text
+SimpleImputer(strategy="most_frequent")
+OneHotEncoder(handle_unknown="ignore")
+```
+
+Các bước này được đặt trong `Pipeline` cùng Random Forest. Khi GridSearchCV chia fold, median và danh mục chỉ được học từ phần train của fold đó.
+
+## 8. GridSearchCV
+
+GridSearchCV chạy ba fold trên tập train. Các fold tiếp tục được chia theo mã khách hàng.
+
+Các tham số được thử:
+
+```text
+n_estimators: 250, 400
+max_depth: 8, None
+min_samples_leaf: 1, 5
+min_samples_split: 2
+max_features: sqrt
+criterion: gini
+class_weight: balanced
+```
+
+Tiêu chí chọn model là macro F1. Cấu hình được chọn:
+
+```text
+n_estimators = 250
+max_depth = 8
 min_samples_leaf = 5
 min_samples_split = 2
 max_features = sqrt
@@ -104,62 +115,53 @@ criterion = gini
 class_weight = balanced
 ```
 
-Ngưỡng 0,68 được chọn từ dự đoán out-of-fold trên tập train để tối đa macro F1. Sau đó model được fit lại trên toàn bộ train và đánh giá một lần trên test.
+## 9. Chọn ngưỡng dự đoán
 
-## 9. Kết quả trên tập test
+Ngưỡng được chọn từ dự đoán out-of-fold của tập train, không nhìn nhãn tập test. Ngưỡng tối ưu theo macro F1 là 0,57.
+
+Sau khi chọn tham số và ngưỡng, model được fit lại trên toàn bộ train rồi mới đánh giá trên test.
+
+## 10. Kết quả test
 
 | Chỉ số | Kết quả |
 |---|---:|
-| Accuracy | 0,9780 |
-| Balanced accuracy | 0,5195 |
-| Macro F1 | 0,5191 |
-| Precision lớp quay lại | 0,0484 |
-| Recall lớp quay lại | 0,0504 |
-| F1 lớp quay lại | 0,0494 |
-| F1 lớp churn | 0,9889 |
-| ROC-AUC | 0,5529 |
-| Average precision lớp quay lại | 0,0173 |
+| Accuracy | 0,8791 |
+| Balanced accuracy | 0,6445 |
+| Macro F1 | 0,5888 |
+| Precision lớp quay lại | 0,1783 |
+| Recall lớp quay lại | 0,3833 |
+| F1 lớp quay lại | 0,2434 |
+| Precision lớp churn | 0,9649 |
+| Recall lớp churn | 0,9056 |
+| F1 lớp churn | 0,9343 |
+| ROC-AUC | 0,7168 |
 
 Confusion matrix:
 
 ```text
                      Dự đoán quay lại   Dự đoán churn
-Thực tế quay lại              6               113
-Thực tế churn                118            10.268
+Thực tế quay lại             23                37
+Thực tế churn               106             1.017
 ```
 
-Mốc tham chiếu đoán tất cả khách là churn có macro F1 bằng 0,4972 và balanced accuracy bằng 0,5000. Đây chỉ là mốc kiểm tra, không phải thuật toán thứ hai.
+Mốc đoán toàn bộ khách là churn có macro F1 bằng 0,4870 và balanced accuracy bằng 0,5000. Đây chỉ là mốc kiểm tra, không phải một thuật toán khác.
 
-## 10. Tự đánh giá
+## 11. Tự đánh giá
 
-Mô hình hoàn thành đúng quy trình supervised learning và không có rò rỉ dữ liệu theo thời gian. Tuy nhiên chất lượng phân biệt còn thấp:
+Mô hình đã phân biệt hai lớp tốt hơn phiên bản dùng một snapshot cho toàn bộ khách. ROC-AUC đạt 0,7168 và recall lớp quay lại tăng lên 38,33%.
 
-- Chỉ 595 khách thuộc lớp quay lại.
-- Phần lớn khách chỉ có một đơn trước snapshot nên thông tin hành vi lặp lại rất ít.
-- ROC-AUC 0,5529 chỉ cao hơn mức ngẫu nhiên một khoảng nhỏ.
-- F1 lớp quay lại 0,0494 cho thấy model chưa nhận diện tốt lớp hiếm.
-
-Vì vậy accuracy 97,80% không được dùng làm bằng chứng rằng model tốt. Mô hình hiện phù hợp để minh họa quy trình và xếp hạng thử nghiệm, chưa phù hợp để tự động quyết định chiến dịch giữ chân.
-
-## 11. Xuất model và tính năng sử dụng
-
-`random_forest_churn_pipeline.joblib` lưu:
-
-- bước xử lý missing;
-- one-hot encoding;
-- Random Forest;
-- danh sách feature;
-- ngưỡng 0,68;
-- định nghĩa nhãn và mốc thời gian.
-
-`predict_churn.py` nhận một file CSV feature và xuất xác suất churn cùng nhãn dự đoán. Đây là phần có thể được gọi từ website hoặc API của nhóm sau này. Trong phạm vi bài hiện tại chưa tạo giao diện web riêng.
+Tuy vậy, precision lớp quay lại chỉ đạt 17,83%. Trong 129 mẫu được dự đoán quay lại, có 23 mẫu đúng. Mô hình vẫn cần thêm dữ liệu khách mua lặp lại trước khi dùng trong thực tế.
 
 ## 12. Kiểm tra
 
-Tám test tự động kiểm tra:
+Mười hai test tự động kiểm tra:
 
-- đơn hủy hoặc nằm ngoài cửa sổ không được tính là quay lại;
-- đơn giao sau snapshot không đi vào feature;
-- công thức Frequency, Monetary, AOV và khoảng cách giữa các đơn;
-- model không dùng ID, target hoặc cột thời gian snapshot làm feature;
-- xác suất và nhãn trong CSV khớp model đã lưu.
+- điều kiện ít nhất hai đơn;
+- điều kiện hoạt động trong 180 ngày;
+- đơn hủy và đơn giao sau snapshot;
+- công thức feature;
+- `sample_id` không trùng;
+- model không dùng ID hoặc target làm feature;
+- xác suất CSV khớp model đã lưu;
+- một khách không xuất hiện ở cả train và test;
+- tỷ lệ chia tập gần 80/20.

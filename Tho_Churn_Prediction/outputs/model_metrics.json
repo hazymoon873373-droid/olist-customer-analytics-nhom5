@@ -47,5 +47,9 @@
     "macro_f1": 0.486990459670425
   },
   "training_seconds": 81.6386977000002,
-  "peak_memory_mb": 6.906778335571289
+  "peak_memory_mb": 6.906778335571289,
+  "dataset_rows": 5920,
+  "dataset_customers": 1484,
+  "return_rows": 299,
+  "churn_rows": 5621
 }
