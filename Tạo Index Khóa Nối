@@ -1,0 +1,19 @@
+db.olist_customers_clean.createIndex({ customer_id: 1 }, { unique: true });
+db.olist_orders_clean.createIndex({ order_id: 1 }, { unique: true });
+db.olist_products_clean.createIndex({ product_id: 1 }, { unique: true });
+db.olist_sellers_clean.createIndex({ seller_id: 1 }, { unique: true });
+db.product_category_name_translation_clean.createIndex({ product_category_name: 1 }, { unique: true });
+db.geo_by_zip.createIndex({ geolocation_zip_code_prefix: 1 }, { unique: true });
+
+db.olist_order_items_clean.createIndex({ order_id: 1, order_item_id: 1 }, { unique: true });
+db.olist_order_payments_clean.createIndex({ order_id: 1, payment_sequential: 1 }, { unique: true });
+db.olist_order_reviews_clean.createIndex({ review_id: 1, order_id: 1 }, { unique: true });
+
+db.olist_orders_clean.createIndex({ customer_id: 1 });
+db.olist_orders_clean.createIndex({ order_status: 1 });
+db.olist_orders_clean.createIndex({ valid_delay_kpi: 1 });
+db.olist_order_items_clean.createIndex({ product_id: 1 });
+db.olist_order_items_clean.createIndex({ seller_id: 1 });
+db.olist_order_reviews_clean.createIndex({ order_id: 1 });
+db.olist_customers_clean.createIndex({ customer_unique_id: 1 });
+db.olist_geolocation_clean.createIndex({ geolocation_zip_code_prefix: 1 });
