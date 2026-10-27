@@ -1,0 +1,44 @@
+{
+  "model": "RandomForestClassifier",
+  "label_definition": "1 = không có đơn delivered trong 180 ngày sau snapshot; 0 = có quay lại mua",
+  "snapshot_date": "2018-03-02",
+  "prediction_window_end": "2018-08-29",
+  "random_state": 42,
+  "train_rows": 42017,
+  "test_rows": 10505,
+  "train_churn_rate": 0.9886712521122403,
+  "test_churn_rate": 0.9886720609233698,
+  "best_parameters": {
+    "class_weight": "balanced",
+    "criterion": "gini",
+    "max_depth": null,
+    "max_features": "sqrt",
+    "min_samples_leaf": 5,
+    "min_samples_split": 2,
+    "n_estimators": 400
+  },
+  "cv_best_macro_f1_at_default_threshold": 0.502935587374358,
+  "selected_threshold": 0.6800000000000002,
+  "oof_macro_f1_at_selected_threshold": 0.5143764444477215,
+  "test_metrics": {
+    "accuracy": 0.9780104712041885,
+    "balanced_accuracy": 0.5195293599820056,
+    "macro_f1": 0.5191296495448916,
+    "weighted_f1": 0.9782340537522587,
+    "return_precision": 0.04838709677419355,
+    "return_recall": 0.05042016806722689,
+    "return_f1": 0.04938271604938271,
+    "churn_precision": 0.9891147288315191,
+    "churn_recall": 0.9886385518967842,
+    "churn_f1": 0.9888765830404006,
+    "roc_auc": 0.5529186833601146,
+    "return_average_precision": 0.017305706625738337
+  },
+  "all_churn_baseline": {
+    "accuracy": 0.9886720609233698,
+    "balanced_accuracy": 0.5,
+    "macro_f1": 0.4971518835862333
+  },
+  "training_seconds": 324.7989908000018,
+  "peak_memory_mb": 55.04612636566162
+}
