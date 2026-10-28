@@ -34,9 +34,11 @@ Ngưỡng xác suất 0,57 được chọn từ dự đoán out-of-fold của tr
 
 ## Kết quả
 
-Trên tập test, mô hình đạt accuracy 0,8791, balanced accuracy 0,6445, macro F1 0,5888 và ROC-AUC 0,7168.
+Trên tập test, mô hình đạt accuracy 0,8791, balanced accuracy 0,6445, macro precision 0,5716, macro recall 0,6445, macro F1 0,5888 và ROC-AUC 0,7168. Weighted precision, weighted recall và weighted F1 lần lượt là 0,9250, 0,8791 và 0,8993.
 
 Đối với lớp khách quay lại, precision đạt 0,1783, recall đạt 0,3833 và F1 đạt 0,2434. Mô hình phát hiện đúng 23 trong 60 mẫu quay lại. Đối với lớp churn, F1 đạt 0,9343.
+
+Trên tập train, accuracy đạt 0,9533, macro F1 đạt 0,8233 và weighted F1 đạt 0,9596. Kết quả train cao hơn test, đặc biệt ở lớp quay lại, nên model có dấu hiệu học tập train khá mạnh. Vì lớp churn chiếm đa số, weighted average cao không có nghĩa là model đã dự đoán tốt lớp quay lại; do đó báo cáo ưu tiên macro F1, balanced accuracy và chỉ số từng lớp.
 
 Feature có mức độ quan trọng cao gồm khoảng cách trung bình giữa các lần mua, tỷ lệ phí vận chuyển trên giá trị sản phẩm, tổng chi tiêu, giá trị đơn trung bình, chi tiêu 180 ngày và recency. Feature importance chỉ cho biết mức đóng góp trong Random Forest, không chứng minh quan hệ nhân quả.
 

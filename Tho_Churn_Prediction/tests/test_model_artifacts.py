@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -22,6 +23,15 @@ class ModelArtifactTest(unittest.TestCase):
         cls.split_table = pd.read_csv(
             PROJECT_DIR / "outputs" / "train_test_split.csv"
         )
+        cls.metrics_table = pd.read_csv(
+            PROJECT_DIR / "outputs" / "performance_metrics.csv"
+        ).set_index("dataset")
+        with open(
+            PROJECT_DIR / "outputs" / "model_metrics.json",
+            "r",
+            encoding="utf-8",
+        ) as file:
+            cls.metrics_json = json.load(file)
 
     def test_model_does_not_use_identifier_or_target(self):
         features = set(self.bundle["model_features"])
@@ -70,6 +80,25 @@ class ModelArtifactTest(unittest.TestCase):
         test_rate = self.split_table["split"].eq("test").mean()
         self.assertGreater(test_rate, 0.17)
         self.assertLess(test_rate, 0.23)
+
+    def test_metrics_table_has_train_test_and_weighted_average(self):
+        self.assertEqual(set(self.metrics_table.index), {"train", "test"})
+        for column in [
+            "macro_precision",
+            "macro_recall",
+            "macro_f1",
+            "weighted_precision",
+            "weighted_recall",
+            "weighted_f1",
+        ]:
+            self.assertIn(column, self.metrics_table.columns)
+
+    def test_test_metrics_csv_matches_json(self):
+        for column in ["accuracy", "macro_f1", "weighted_f1", "roc_auc"]:
+            self.assertAlmostEqual(
+                self.metrics_table.loc["test", column],
+                self.metrics_json["test_metrics"][column],
+            )
 
 
 if __name__ == "__main__":

@@ -116,7 +116,19 @@ def calculate_metrics(y_true, y_pred, churn_probability):
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
+        "macro_precision": float(
+            precision_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
+        "macro_recall": float(
+            recall_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
         "macro_f1": float(f1_score(y_true, y_pred, average="macro")),
+        "weighted_precision": float(
+            precision_score(y_true, y_pred, average="weighted", zero_division=0)
+        ),
+        "weighted_recall": float(
+            recall_score(y_true, y_pred, average="weighted", zero_division=0)
+        ),
         "weighted_f1": float(f1_score(y_true, y_pred, average="weighted")),
         "return_precision": float(
             precision_score(y_true, y_pred, pos_label=0, zero_division=0)
@@ -394,12 +406,15 @@ def main():
     threshold, oof_macro_f1 = select_threshold(y_train, oof_probability)
 
     best_pipeline.fit(X_train, y_train)
+    train_probability = best_pipeline.predict_proba(X_train)[:, 1]
+    train_prediction = (train_probability >= threshold).astype(int)
     test_probability = best_pipeline.predict_proba(X_test)[:, 1]
     test_prediction = (test_probability >= threshold).astype(int)
     elapsed_seconds = time.perf_counter() - start_time
     _, peak_memory = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
+    train_metrics = calculate_metrics(y_train, train_prediction, train_probability)
     test_metrics = calculate_metrics(y_test, test_prediction, test_probability)
     baseline_prediction = np.ones(len(y_test), dtype=int)
     baseline_metrics = calculate_metrics(y_test, baseline_prediction, test_probability)
@@ -407,6 +422,14 @@ def main():
     report_table = make_classification_report_table(y_test, test_prediction)
     report_table.to_csv(
         output_dir / "classification_report.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
+    train_report_table = make_classification_report_table(y_train, train_prediction)
+    train_report_table.to_csv(
+        output_dir / "classification_report_train.csv",
         index=False,
         encoding="utf-8-sig",
         lineterminator="\n",
@@ -420,6 +443,49 @@ def main():
     )
     matrix_table.to_csv(
         output_dir / "confusion_matrix.csv",
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
+    train_matrix = confusion_matrix(y_train, train_prediction, labels=[0, 1])
+    train_matrix_table = pd.DataFrame(
+        train_matrix,
+        index=["actual_return_0", "actual_churn_1"],
+        columns=["predicted_return_0", "predicted_churn_1"],
+    )
+    train_matrix_table.to_csv(
+        output_dir / "confusion_matrix_train.csv",
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
+    metric_columns = [
+        "accuracy",
+        "balanced_accuracy",
+        "macro_precision",
+        "macro_recall",
+        "macro_f1",
+        "weighted_precision",
+        "weighted_recall",
+        "weighted_f1",
+        "return_precision",
+        "return_recall",
+        "return_f1",
+        "churn_precision",
+        "churn_recall",
+        "churn_f1",
+        "roc_auc",
+        "return_average_precision",
+    ]
+    metrics_summary = pd.DataFrame(
+        [
+            {"dataset": "train", **train_metrics},
+            {"dataset": "test", **test_metrics},
+        ]
+    )[["dataset"] + metric_columns]
+    metrics_summary.to_csv(
+        output_dir / "performance_metrics.csv",
+        index=False,
         encoding="utf-8-sig",
         lineterminator="\n",
     )
@@ -515,6 +581,7 @@ def main():
         "cv_best_macro_f1_at_default_threshold": float(grid_search.best_score_),
         "selected_threshold": threshold,
         "oof_macro_f1_at_selected_threshold": oof_macro_f1,
+        "train_metrics": train_metrics,
         "test_metrics": test_metrics,
         "all_churn_baseline": {
             key: baseline_metrics[key]
@@ -561,14 +628,48 @@ def main():
         f"Khách train: {train_groups.nunique():,} | Khách test: {test_groups.nunique():,}",
         f"Khách trùng giữa hai tập: {len(customer_overlap)}",
         f"Ngưỡng dự đoán chọn trên train: {threshold:.2f}",
+        "",
+        "KẾT QUẢ TRÊN TẬP TRAIN",
+        f"Accuracy: {train_metrics['accuracy']:.4f}",
+        f"Balanced accuracy: {train_metrics['balanced_accuracy']:.4f}",
+        f"Macro precision: {train_metrics['macro_precision']:.4f}",
+        f"Macro recall: {train_metrics['macro_recall']:.4f}",
+        f"Macro F1: {train_metrics['macro_f1']:.4f}",
+        f"Weighted precision: {train_metrics['weighted_precision']:.4f}",
+        f"Weighted recall: {train_metrics['weighted_recall']:.4f}",
+        f"Weighted F1: {train_metrics['weighted_f1']:.4f}",
+        f"ROC-AUC: {train_metrics['roc_auc']:.4f}",
+        "",
+        classification_report(
+            y_train,
+            train_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        ),
+        "KẾT QUẢ TRÊN TẬP TEST",
         f"Accuracy: {test_metrics['accuracy']:.4f}",
         f"Balanced accuracy: {test_metrics['balanced_accuracy']:.4f}",
+        f"Macro precision: {test_metrics['macro_precision']:.4f}",
+        f"Macro recall: {test_metrics['macro_recall']:.4f}",
         f"Macro F1: {test_metrics['macro_f1']:.4f}",
+        f"Weighted precision: {test_metrics['weighted_precision']:.4f}",
+        f"Weighted recall: {test_metrics['weighted_recall']:.4f}",
+        f"Weighted F1: {test_metrics['weighted_f1']:.4f}",
         f"F1 lớp quay lại (0): {test_metrics['return_f1']:.4f}",
         f"F1 lớp churn (1): {test_metrics['churn_f1']:.4f}",
         f"ROC-AUC: {test_metrics['roc_auc']:.4f}",
         f"Average precision lớp quay lại: {test_metrics['return_average_precision']:.4f}",
         "",
+        classification_report(
+            y_test,
+            test_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        ),
         "Confusion matrix [actual x predicted]:",
         matrix_table.to_string(),
         "",
@@ -581,14 +682,41 @@ def main():
 
     print("\nTHAM SỐ TỐT NHẤT")
     print(best_params)
+    print("\nKẾT QUẢ TRÊN TẬP TRAIN")
+    print(f"Accuracy: {train_metrics['accuracy']:.4f}")
+    print(f"Balanced accuracy: {train_metrics['balanced_accuracy']:.4f}")
+    print(f"Macro F1: {train_metrics['macro_f1']:.4f}")
+    print(f"Weighted F1: {train_metrics['weighted_f1']:.4f}")
+    print(f"ROC-AUC: {train_metrics['roc_auc']:.4f}")
+    print(
+        classification_report(
+            y_train,
+            train_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        )
+    )
     print("\nKẾT QUẢ TRÊN TẬP TEST")
     print(f"Ngưỡng dự đoán: {threshold:.2f}")
     print(f"Accuracy: {test_metrics['accuracy']:.4f}")
     print(f"Balanced accuracy: {test_metrics['balanced_accuracy']:.4f}")
     print(f"Macro F1: {test_metrics['macro_f1']:.4f}")
+    print(f"Weighted F1: {test_metrics['weighted_f1']:.4f}")
     print(f"F1 lớp quay lại: {test_metrics['return_f1']:.4f}")
     print(f"F1 lớp churn: {test_metrics['churn_f1']:.4f}")
     print(f"ROC-AUC: {test_metrics['roc_auc']:.4f}")
+    print(
+        classification_report(
+            y_test,
+            test_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        )
+    )
     print(f"Thời gian: {elapsed_seconds:.2f} giây")
     print(f"Đã lưu kết quả tại: {output_dir}")
 

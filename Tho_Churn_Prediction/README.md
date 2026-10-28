@@ -84,14 +84,21 @@ Bảng dữ liệu gồm 5.920 mẫu customer-snapshot của 1.484 khách hàng:
 |---|---:|
 | Accuracy | 0,8791 |
 | Balanced accuracy | 0,6445 |
+| Macro precision | 0,5716 |
+| Macro recall | 0,6445 |
 | Macro F1 | 0,5888 |
+| Weighted precision | 0,9250 |
+| Weighted recall | 0,8791 |
+| Weighted F1 | 0,8993 |
 | Precision lớp quay lại | 0,1783 |
 | Recall lớp quay lại | 0,3833 |
 | F1 lớp quay lại | 0,2434 |
+| Precision lớp churn | 0,9649 |
+| Recall lớp churn | 0,9056 |
 | F1 lớp churn | 0,9343 |
 | ROC-AUC | 0,7168 |
 
-Kết quả tốt hơn cách lấy toàn bộ khách tại một snapshot. Tuy nhiên dữ liệu vẫn mất cân bằng nên cần đọc balanced accuracy, macro F1 và kết quả từng lớp thay vì chỉ nhìn accuracy.
+Trên train, weighted F1 đạt 0,9596 nhưng trên test còn 0,8993. Khoảng chênh này cho thấy model học tập train khá mạnh. Vì dữ liệu mất cân bằng, cần đọc balanced accuracy, macro F1 và kết quả từng lớp thay vì chỉ nhìn accuracy hoặc weighted average.
 
 ## Dự đoán file mới
 

@@ -127,7 +127,12 @@ Sau khi chọn tham số và ngưỡng, model được fit lại trên toàn b�
 |---|---:|
 | Accuracy | 0,8791 |
 | Balanced accuracy | 0,6445 |
+| Macro precision | 0,5716 |
+| Macro recall | 0,6445 |
 | Macro F1 | 0,5888 |
+| Weighted precision | 0,9250 |
+| Weighted recall | 0,8791 |
+| Weighted F1 | 0,8993 |
 | Precision lớp quay lại | 0,1783 |
 | Recall lớp quay lại | 0,3833 |
 | F1 lớp quay lại | 0,2434 |
@@ -146,6 +151,17 @@ Thực tế churn               106             1.017
 
 Mốc đoán toàn bộ khách là churn có macro F1 bằng 0,4870 và balanced accuracy bằng 0,5000. Đây chỉ là mốc kiểm tra, không phải một thuật toán khác.
 
+Báo cáo phân loại trên test:
+
+| Lớp | Precision | Recall | F1-score | Support |
+|---|---:|---:|---:|---:|
+| Quay lại (0) | 0,1783 | 0,3833 | 0,2434 | 60 |
+| Churn (1) | 0,9649 | 0,9056 | 0,9343 | 1.123 |
+| Macro avg | 0,5716 | 0,6445 | 0,5888 | 1.183 |
+| Weighted avg | 0,9250 | 0,8791 | 0,8993 | 1.183 |
+
+Trên train, accuracy đạt 0,9533, macro F1 đạt 0,8233 và weighted F1 đạt 0,9596. Các kết quả chi tiết của train được lưu riêng để kiểm tra độ chênh giữa train và test.
+
 ## 11. Tự đánh giá
 
 Mô hình đã phân biệt hai lớp tốt hơn phiên bản dùng một snapshot cho toàn bộ khách. ROC-AUC đạt 0,7168 và recall lớp quay lại tăng lên 38,33%.
@@ -154,7 +170,7 @@ Tuy vậy, precision lớp quay lại chỉ đạt 17,83%. Trong 129 mẫu đư�
 
 ## 12. Kiểm tra
 
-Mười hai test tự động kiểm tra:
+Mười bốn test tự động kiểm tra:
 
 - điều kiện ít nhất hai đơn;
 - điều kiện hoạt động trong 180 ngày;
@@ -164,4 +180,8 @@ Mười hai test tự động kiểm tra:
 - model không dùng ID hoặc target làm feature;
 - xác suất CSV khớp model đã lưu;
 - một khách không xuất hiện ở cả train và test;
-- tỷ lệ chia tập gần 80/20.
+- tỷ lệ chia tập gần 80/20;
+- bảng metric có đủ train, test, macro avg và weighted avg;
+- metric trong CSV khớp với file JSON.
+
+Các file `performance_metrics.csv`, `classification_report_train.csv`, `classification_report.csv`, `confusion_matrix_train.csv` và `confusion_matrix.csv` lưu lại đầy đủ kết quả đánh giá.
