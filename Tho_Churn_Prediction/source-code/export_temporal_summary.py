@@ -49,4 +49,4 @@ def export_summary(output_dir):
 
 
 if __name__ == "__main__":
-    export_summary(Path(__file__).resolve().parents[1] / "outputs" / "temporal_v2_provisional")
+    export_summary(Path(__file__).resolve().parents[1] / "outputs" / "temporal_v3_provisional")

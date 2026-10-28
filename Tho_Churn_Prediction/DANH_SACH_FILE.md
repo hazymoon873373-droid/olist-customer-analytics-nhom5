@@ -1,7 +1,7 @@
 # Danh sách file dự đoán churn
 
-Các file mới có phiên bản tạm thời nằm trong `outputs/temporal_v2_provisional/`.
-Đọc `reports/bao_cao_temporal_v2.md` để biết quy ước, nguồn và hạn chế trước khi dùng.
+Các file mới có phiên bản tạm thời nằm trong `outputs/temporal_v3_provisional/`.
+Đọc `reports/bao_cao_temporal_v3.md` để biết quy ước, nguồn và hạn chế trước khi dùng.
 
 ## Code
 

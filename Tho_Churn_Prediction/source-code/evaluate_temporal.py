@@ -13,16 +13,19 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
     average_precision_score, classification_report, confusion_matrix,
-    precision_recall_curve, roc_auc_score,
+    precision_recall_curve, roc_auc_score, roc_curve,
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from export_temporal_summary import export_summary
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "Tho_Shared"))
+from load_orders import MASTER_FILE, CLEAN_ORDERS_FILE, load_orders as load_shared_orders, source_metadata
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-VERSION = "rf_temporal_v2_provisional"
+VERSION = "rf_temporal_v3_20261028_provisional"
 TEST_T0 = pd.Timestamp("2018-03-01 00:00:00")
 BI_T0 = pd.Timestamp("2018-08-31 00:00:00")
 OBSERVATION_END = pd.Timestamp("2018-08-31 00:00:00")
@@ -47,32 +50,7 @@ def file_hash(path):
 
 
 def load_orders(master_path, clean_path):
-    columns = [
-        "order_id", "customer_unique_id", "order_status", "order_purchase_timestamp",
-        "total_products_value", "total_freight_value", "total_items",
-        "customer_state", "region_name",
-    ]
-    clean_columns = [
-        "order_id", "order_status", "order_purchase_timestamp",
-        "order_delivered_customer_date", "valid_delay_kpi",
-    ]
-    master = pd.read_csv(master_path, usecols=columns, low_memory=False, na_values=["null"])
-    clean = pd.read_csv(clean_path, usecols=clean_columns, low_memory=False, na_values=["null"])
-    if master.order_id.duplicated().any() or clean.order_id.duplicated().any():
-        raise ValueError("Trùng order_id trong dữ liệu nguồn")
-    orders = master.merge(clean, on="order_id", how="left", validate="one_to_one", suffixes=("", "_clean"), indicator=True)
-    if not orders["_merge"].eq("both").all():
-        raise ValueError("Có đơn không tìm thấy trong bảng sạch")
-    if not orders.order_status.eq(orders.order_status_clean).all():
-        raise ValueError("Trạng thái đơn giữa hai nguồn không khớp")
-    for col in ["order_purchase_timestamp", "order_purchase_timestamp_clean", "order_delivered_customer_date"]:
-        orders[col] = pd.to_datetime(orders[col], errors="coerce")
-    if not orders.order_purchase_timestamp.equals(orders.order_purchase_timestamp_clean):
-        raise ValueError("Thời gian mua giữa hai nguồn không khớp")
-    for col in ["total_products_value", "total_freight_value", "total_items"]:
-        orders[col] = pd.to_numeric(orders[col], errors="coerce")
-    orders["valid_delay_kpi"] = orders.valid_delay_kpi.astype(str).str.lower().eq("true")
-    return orders
+    return load_shared_orders(master_path=master_path, clean_orders_path=clean_path)
 
 
 def build_snapshot(orders, t0, observation_end=OBSERVATION_END, min_orders=2, active_days=180, label_known_by=None):
@@ -188,8 +166,8 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8")
     root = Path(__file__).resolve().parents[1]
     parser = ArgumentParser(description="Đánh giá Random Forest theo thời gian")
-    parser.add_argument("--master", type=Path, default=root.parent / "Tho_RFM_KMeans/data/olist_powerbi_orders_master.csv")
-    parser.add_argument("--clean-orders", type=Path, required=True)
+    parser.add_argument("--master", type=Path, default=MASTER_FILE)
+    parser.add_argument("--clean-orders", type=Path, default=CLEAN_ORDERS_FILE)
     parser.add_argument("--observation-end", default=str(OBSERVATION_END))
     args = parser.parse_args()
     observation_end = pd.Timestamp(args.observation_end)
@@ -219,8 +197,9 @@ def main():
     data.loc[test.index, "predicted_churn"] = (prob >= 0.5).astype(int)
     metrics = score_metrics(test.churn_proxy_180d.astype(int).to_numpy(), prob)
     metrics.update({
-        "version": VERSION, "source_status": "Tạm thời: chờ xác nhận dữ liệu và mốc theo dõi",
+        "version": VERSION, "source_status": "Đã dùng master 28/10 và bảng sạch; mốc theo dõi chờ nhóm xác nhận",
         "master_sha256": file_hash(args.master), "clean_orders_sha256": file_hash(args.clean_orders),
+        "input_sources": source_metadata(args.master, args.clean_orders),
         "master_modified_time_utc": pd.Timestamp(args.master.stat().st_mtime, unit="s", tz="UTC").isoformat(),
         "clean_orders_modified_time_utc": pd.Timestamp(args.clean_orders.stat().st_mtime, unit="s", tz="UTC").isoformat(),
         "observation_end_exclusive": str(observation_end), "test_t0": str(TEST_T0),
@@ -231,7 +210,7 @@ def main():
         "train_test_customer_overlap": len(set(train.customer_unique_id) & set(test.customer_unique_id)),
         "selection": "Dùng tham số mặc định RandomForest, class_weight=balanced, threshold 0.5; không tối ưu bằng test; chưa có CV theo thời gian do lịch sử ngắn.",
     })
-    out = root / "outputs" / "temporal_v2_provisional"
+    out = root / "outputs" / "temporal_v3_provisional"
     out.mkdir(parents=True, exist_ok=True)
     eval_cols = ["sample_id", "customer_unique_id", "snapshot_timestamp", "prediction_window_end", "churn_proxy_180d", "label_status_or_reason", "split", "churn_probability", "predicted_churn"] + FEATURES
     data[eval_cols].to_csv(out / "snapshot_evaluation.csv", index=False, encoding="utf-8-sig")
@@ -244,6 +223,10 @@ def main():
     if len(np.unique(test.churn_proxy_180d.astype(int))) == 2:
         precision, recall, thresholds = precision_recall_curve(test.churn_proxy_180d.astype(int), prob, pos_label=1)
         pd.DataFrame({"precision_churn_1": precision, "recall_churn_1": recall, "threshold": np.r_[thresholds, np.nan]}).to_csv(out / "precision_recall_churn_1.csv", index=False, encoding="utf-8-sig")
+        precision_return, recall_return, thresholds_return = precision_recall_curve(1 - test.churn_proxy_180d.astype(int), 1 - prob, pos_label=1)
+        pd.DataFrame({"precision_repurchase_0": precision_return, "recall_repurchase_0": recall_return, "threshold_repurchase_probability": np.r_[thresholds_return, np.nan]}).to_csv(out / "precision_recall_repurchase_0.csv", index=False, encoding="utf-8-sig")
+        fpr, tpr, roc_thresholds = roc_curve(test.churn_proxy_180d.astype(int), prob, pos_label=1)
+        pd.DataFrame({"false_positive_rate": fpr, "true_positive_rate": tpr, "threshold_churn_probability": roc_thresholds}).to_csv(out / "roc_churn_1.csv", index=False, encoding="utf-8-sig")
 
     charts = out / "charts"
     charts.mkdir(exist_ok=True)
@@ -271,6 +254,25 @@ def main():
         ax.legend()
         fig.tight_layout()
         fig.savefig(charts / "precision_recall_churn_1.png", dpi=160)
+        plt.close(fig)
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.plot(recall_return, precision_return, color="#E76F51", label=f"AP mua lại = {metrics['average_precision_repurchase_0']:.3f}")
+        ax.set_xlabel("Recall - mua lại (0)")
+        ax.set_ylabel("Precision - mua lại (0)")
+        ax.set_title("Precision-recall - lớp mua lại")
+        ax.legend()
+        fig.tight_layout()
+        fig.savefig(charts / "precision_recall_repurchase_0.png", dpi=160)
+        plt.close(fig)
+        fig, ax = plt.subplots(figsize=(7, 5))
+        ax.plot(fpr, tpr, color="#457B9D", label=f"AUC = {metrics['roc_auc_churn_1']:.3f}")
+        ax.plot([0, 1], [0, 1], "--", color="gray")
+        ax.set_xlabel("False positive rate")
+        ax.set_ylabel("True positive rate - không mua lại (1)")
+        ax.set_title("ROC - lớp không mua lại")
+        ax.legend()
+        fig.tight_layout()
+        fig.savefig(charts / "roc_churn_1.png", dpi=160)
         plt.close(fig)
     importance = pd.read_csv(out / "feature_importance.csv").head(15).sort_values("importance")
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -307,8 +309,10 @@ def main():
     kmeans_path = root.parent / "Tho_RFM_KMeans/outputs/rfm_customers_kmeans.csv"
     kmeans = pd.read_csv(kmeans_path, usecols=["customer_unique_id", "kmeans_cluster", "kmeans_segment"])
     bi = bi.merge(kmeans, on="customer_unique_id", how="left", validate="one_to_one")
+    bi["kmeans_data_status"] = np.where(bi.kmeans_cluster.notna(), "mo_ta_hoi_cuu_trang_thai_cuoi", "khong_co_cum")
     bi["cutoff_timestamp"] = BI_T0
     bi["model_version"] = VERSION
+    bi["risk_label_status"] = np.where(bi.eligibility_status.eq("du_dieu_kien"), "tham_khao_chua_hieu_chuan", pd.NA)
     bi["source_version"] = file_hash(args.master)[:12] + "-" + file_hash(args.clean_orders)[:12]
     bi["churn_proxy_180d"] = pd.NA
     bi["label_status_or_reason"] = "insufficient_followup"

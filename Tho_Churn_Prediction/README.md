@@ -1,20 +1,24 @@
 # Dự đoán churn proxy 180 ngày bằng Random Forest
 
-> **Đọc trước:** Nội dung cũ bên dưới là kết quả đối chiếu theo nhóm khách, dùng master cũ có 8 ngày giao được điền và thời điểm snapshot chưa thống nhất. Không dùng model cũ để tích hợp hoặc khẳng định hiệu quả theo thời gian. Bản đánh giá mới và hướng dẫn chạy nằm trong [báo cáo temporal v2](reports/bao_cao_temporal_v2.md). Hai bản dùng dữ liệu và quy ước khác nhau nên không so sánh điểm như cùng một thí nghiệm.
+> **Đọc trước:** Kết quả chia theo nhóm khách bên dưới là bản cũ, dùng master cũ có 8 ngày giao được điền và thời điểm snapshot chưa thống nhất. Bản hiện tại dùng master mới và bảng sạch, xem [báo cáo temporal v3](reports/bao_cao_temporal_v3.md). Mốc theo dõi cuối vẫn là giả định cần nhóm xác nhận.
 
 Chạy bản mới với bảng đơn sạch có cờ chất lượng:
 
 ```powershell
 python -m pip install -r Tho_Churn_Prediction/requirements.txt
-python -B Tho_Churn_Prediction/source-code/run_all.py --clean-orders "D:\duong-dan\olist_orders_clean.csv"
+python -B Tho_Churn_Prediction/source-code/run_all.py
 ```
 
-Tham số `--master` chọn master khác; `--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định cho bản thử, cần nhóm xác nhận nguồn và thời gian đủ dữ liệu. Kết quả mới được tạo trong `outputs/temporal_v2_provisional/`, gồm CSV snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI và xác suất hiện chỉ để thử tích hợp vì model dự đoán toàn bộ test là không mua lại.
+Đầu vào mặc định nằm trong `Tho_Shared/data/`. Tham số `--master` và `--clean-orders` chọn nguồn khác;
+`--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định,
+cần nhóm xác nhận thời gian đủ dữ liệu. Kết quả mới trong `outputs/temporal_v3_provisional/`, gồm CSV
+snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI chỉ để thử tích hợp
+vì model dự đoán toàn bộ test là không mua lại.
 
 Ngưỡng 180 ngày được tham khảo từ nghiên cứu của Zeinali và cộng sự (2026) trên dữ liệu Olist:
 [bài nghiên cứu](https://doi.org/10.1155/tswj/1946904). Bản dự đoán của nhóm dùng cửa sổ
 `[T0, T0 + 180 ngày)` và gọi nhãn 1 là “không mua lại trong 180 ngày”, không khẳng định
-khách rời bỏ vĩnh viễn. Chi tiết và giới hạn của nguồn được ghi trong báo cáo temporal v2.
+khách rời bỏ vĩnh viễn. Chi tiết và giới hạn của nguồn được ghi trong báo cáo temporal v3.
 
 ---
 
