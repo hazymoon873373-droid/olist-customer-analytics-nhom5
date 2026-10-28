@@ -9,6 +9,7 @@ kaggle.json
 *.pem
 *.key
 node_modules/
+.codegraph/
 .DS_Store
 Thumbs.db
 
