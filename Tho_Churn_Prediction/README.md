@@ -1,5 +1,20 @@
 # Dự đoán churn proxy 180 ngày bằng Random Forest
 
+> **Đọc trước:** Nội dung cũ bên dưới là kết quả đối chiếu theo nhóm khách, dùng master cũ có 8 ngày giao được điền và thời điểm snapshot chưa thống nhất. Không dùng model cũ để tích hợp hoặc khẳng định hiệu quả theo thời gian. Bản đánh giá mới và hướng dẫn chạy nằm trong [báo cáo temporal v2](reports/bao_cao_temporal_v2.md). Hai bản dùng dữ liệu và quy ước khác nhau nên không so sánh điểm như cùng một thí nghiệm.
+
+Chạy bản mới với bảng đơn sạch có cờ chất lượng:
+
+```powershell
+python -m pip install -r Tho_Churn_Prediction/requirements.txt
+python -B Tho_Churn_Prediction/source-code/run_all.py --clean-orders "D:\duong-dan\olist_orders_clean.csv"
+```
+
+Tham số `--master` chọn master khác; `--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định cho bản thử, cần nhóm xác nhận nguồn và thời gian đủ dữ liệu. Kết quả mới được tạo trong `outputs/temporal_v2_provisional/`, gồm CSV snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI và xác suất hiện chỉ để thử tích hợp vì model dự đoán toàn bộ test là không mua lại.
+
+---
+
+## Bản đối chiếu cũ theo nhóm khách
+
 Phần này dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Mô hình sử dụng `RandomForestClassifier` với `class_weight="balanced"`.
 
 - Người thực hiện: Bui Minh Tho
@@ -41,10 +56,11 @@ File đầu vào đã nằm tại:
 Tho_RFM_KMeans/data/olist_powerbi_orders_master.csv
 ```
 
-Chạy lại toàn bộ:
+Chạy bản cũ riêng để đối chiếu (không dùng làm bản tích hợp):
 
 ```powershell
-python -B Tho_Churn_Prediction/source-code/run_all.py
+python -B Tho_Churn_Prediction/source-code/prepare_churn_data.py
+python -B Tho_Churn_Prediction/source-code/train_churn_model.py
 ```
 
 Hoặc chạy riêng từng bước:
@@ -110,7 +126,7 @@ python -B Tho_Churn_Prediction/source-code/predict_churn.py `
   --output "duong-dan\ket_qua_du_doan.csv"
 ```
 
-Kết quả có thêm xác suất churn, nhãn dự đoán và ngưỡng đã chọn trên train.
+Kết quả có thêm xác suất churn, nhãn dự đoán và ngưỡng đã chọn trên train. Script cũ chỉ chấm các dòng có `frequency >= 2` và `0 <= recency <= 180`; điều này không tự chứng minh dữ liệu đặc trưng đã được tính đúng tại T0.
 
 ## Cấu trúc thư mục
 

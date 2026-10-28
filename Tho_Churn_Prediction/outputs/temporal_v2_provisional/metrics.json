@@ -1,0 +1,66 @@
+{
+  "rows": 944,
+  "return_0": 48,
+  "no_repurchase_1": 896,
+  "threshold": 0.5,
+  "classification_report": {
+    "0": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 48.0
+    },
+    "1": {
+      "precision": 0.9491525423728814,
+      "recall": 1.0,
+      "f1-score": 0.9739130434782609,
+      "support": 896.0
+    },
+    "accuracy": 0.9491525423728814,
+    "macro avg": {
+      "precision": 0.4745762711864407,
+      "recall": 0.5,
+      "f1-score": 0.48695652173913045,
+      "support": 944.0
+    },
+    "weighted avg": {
+      "precision": 0.9008905486929043,
+      "recall": 0.9491525423728814,
+      "f1-score": 0.924392041267502,
+      "support": 944.0
+    }
+  },
+  "confusion_matrix_actual_rows_predicted_columns_0_1": [
+    [
+      0,
+      48
+    ],
+    [
+      0,
+      896
+    ]
+  ],
+  "top_decile_ranked_by": "churn_probability",
+  "top_decile_count": 95,
+  "top_decile_lift_churn_1": 1.031390977443609,
+  "roc_auc_churn_1": 0.6420084635416666,
+  "average_precision_churn_1": 0.9665696269275527,
+  "average_precision_repurchase_0": 0.08058383751593876,
+  "version": "rf_temporal_v2_provisional",
+  "source_status": "Tạm thời: chờ xác nhận dữ liệu và mốc theo dõi",
+  "master_sha256": "4ace421830c12d23867255cc6155d68e6475100ffcb2679d701a7d96a018cad3",
+  "clean_orders_sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8",
+  "master_modified_time_utc": "2026-10-23T01:27:26.090062618+00:00",
+  "clean_orders_modified_time_utc": "2026-10-24T06:02:22+00:00",
+  "observation_end_exclusive": "2018-08-31 00:00:00",
+  "test_t0": "2018-03-01 00:00:00",
+  "train_max_label_end": "2018-02-28 00:00:00",
+  "train_rows": 1427,
+  "train_customers": 495,
+  "train_return_0": 58,
+  "train_no_repurchase_1": 1369,
+  "test_customers": 944,
+  "unevaluated_rows": 0,
+  "train_test_customer_overlap": 21,
+  "selection": "Dùng tham số mặc định RandomForest, class_weight=balanced, threshold 0.5; không tối ưu bằng test; chưa có CV theo thời gian do lịch sử ngắn."
+}

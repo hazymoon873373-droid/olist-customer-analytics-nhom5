@@ -1,5 +1,7 @@
 # Nội dung báo cáo: Dự đoán khách hàng rời bỏ
 
+> Bản đối chiếu cũ theo nhóm khách. Master đầu vào có ngày giao được điền và snapshot lưu chưa khớp thời điểm tính; không dùng nội dung này làm kết quả cuối. Xem `bao_cao_temporal_v2.md` để biết kết quả theo thời gian và các giới hạn nguồn.
+
 ## Mục tiêu
 
 Nhóm xây dựng mô hình phân loại để dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Olist không có trạng thái rời bỏ chính thức nên bài sử dụng nhãn churn proxy dựa trên giao dịch.
