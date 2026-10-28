@@ -46,7 +46,7 @@ ETL/MongoDB dùng `requirements.txt` ở gốc; đọc `HUONG_DAN_BAN_GIAO.md` v
 ## Dữ liệu và giới hạn
 
 - Snapshot raw của Huy chứa 9 CSV, ZIP nguồn và phản hồi API IBGE; giữ raw nguyên vẹn để đối chiếu, không nhầm tổng nhiều bảng thành số đơn hoặc số khách duy nhất.
-- Dữ liệu sử dụng hiện tại của ML nằm trong `Tho_Shared/data/`. Kết quả churn nằm duy nhất trong `Tho_Churn_Prediction/outputs/temporal_v3_provisional/`.
+- Dữ liệu sử dụng hiện tại của ML nằm trong `Tho_Shared/data/`. Kết quả churn nằm duy nhất trong `Tho_Churn_Prediction/outputs/temporal_v4_provisional/`. Xem báo cáo v4 và `validation_protocol.json`: tuning bị chặn do không đủ hai lớp ở các fold validation, kết quả chỉ phục vụ thử nghiệm đồ án.
 - Raw Olist: [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), ghi công Olist theo hồ sơ nguồn, CC BY-NC-SA 4.0. [API IBGE](https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome) làm tham chiếu địa lý.
 - Nhãn không mua lại là proxy lịch sử. Mốc kết thúc quan sát cần nhóm xác nhận. Các điểm ML và mức rủi ro đang là kết quả thử nghiệm, không phải kết luận chắc chắn về khách hàng.
 - Các phiên bản đã bỏ khỏi gói chạy vẫn xem được trong [snapshot trước khi dọn](https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5/tree/89faa7f8e3909211543a897710e7168f65a0ff87). Không rewrite lịch sử Git để dọn file thông thường.

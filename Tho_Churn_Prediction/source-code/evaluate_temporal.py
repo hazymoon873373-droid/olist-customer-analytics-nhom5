@@ -19,7 +19,8 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from export_temporal_summary import export_summary
-from prediction_utils import score_deciles
+from prediction_utils import score_deciles, positive_probability, validate_threshold
+from temporal_selection import select_configuration, probability_summary
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "Tho_Shared"))
 from load_orders import MASTER_FILE, CLEAN_ORDERS_FILE, load_orders as load_shared_orders, source_metadata
@@ -27,7 +28,7 @@ from load_orders import MASTER_FILE, CLEAN_ORDERS_FILE, load_orders as load_shar
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-VERSION = "rf_temporal_v3_20261028_provisional"
+VERSION = "temporal_v4_20261029_provisional"
 TEST_T0 = pd.Timestamp("2018-03-01 00:00:00")
 BI_T0 = pd.Timestamp("2018-08-31 00:00:00")
 OBSERVATION_END = pd.Timestamp("2018-08-31 00:00:00")
@@ -169,6 +170,10 @@ def make_logistic_pipeline():
 
 
 def score_metrics(y, probability, threshold=0.5):
+    threshold = validate_threshold(threshold)
+    y, probability = np.asarray(y), np.asarray(probability)
+    if not np.isfinite(probability).all() or ((probability < 0) | (probability > 1)).any():
+        raise ValueError("Invalid churn probability")
     if len(y) == 0:
         raise ValueError("Không có mẫu để đánh giá")
     prediction = (probability >= threshold).astype(int)
@@ -178,13 +183,19 @@ def score_metrics(y, probability, threshold=0.5):
     order = np.argsort(-probability, kind="stable")
     top_n = max(1, int(np.ceil(len(y) * 0.1)))
     prevalence = float(np.mean(y))
+    all_scores_equal = bool(np.ptp(probability) == 0)
     metrics = {
         "rows": len(y), "return_0": int((y == 0).sum()), "no_repurchase_1": int((y == 1).sum()),
         "threshold": threshold, "classification_report": report,
         "confusion_matrix_actual_rows_predicted_columns_0_1": confusion_matrix(y, prediction, labels=[0, 1]).tolist(),
         "top_decile_ranked_by": "churn_probability", "top_decile_count": top_n,
         "top_decile_lift_churn_1": float(np.mean(y[order[:top_n]]) / prevalence) if prevalence else None,
+        "all_scores_equal": all_scores_equal,
+        "top_decile_ties_at_boundary": int((probability == probability[order[top_n-1]]).sum()),
+        "top_decile_tie_policy": "stable input order; constant-score baseline has expected lift 1, no ranking advantage",
     }
+    if all_scores_equal and prevalence:
+        metrics["top_decile_lift_churn_1"] = 1.0
     if len(np.unique(y)) == 2:
         metrics["roc_auc_churn_1"] = float(roc_auc_score(y, probability))
         metrics["average_precision_churn_1"] = float(average_precision_score(y, probability))
@@ -205,7 +216,7 @@ def main():
     parser.add_argument("--clean-orders", type=Path, default=CLEAN_ORDERS_FILE)
     parser.add_argument("--handover-dir", type=Path, help="Thu muc tho do Thien xuat; dung order_summary va cac bang sach trong cung phien ban")
     parser.add_argument("--observation-end", default=str(OBSERVATION_END))
-    parser.add_argument("--output-dir", type=Path, default=root / "outputs/temporal_v3_provisional")
+    parser.add_argument("--output-dir", type=Path, default=root / "outputs/temporal_v4_provisional")
     args = parser.parse_args()
     if args.handover_dir is not None:
         args.master = args.handover_dir / "order_summary.csv"
@@ -228,27 +239,48 @@ def main():
     if train.churn_proxy_180d.nunique() < 2:
         raise ValueError("Train không có đủ hai lớp")
 
-    model = make_pipeline()
-    model.fit(train[FEATURES], train.churn_proxy_180d.astype(int))
-    prob = model.predict_proba(test[FEATURES])[:, 1]
-    logistic = make_logistic_pipeline()
-    logistic.fit(train[FEATURES], train.churn_proxy_180d.astype(int))
-    logistic_prob = logistic.predict_proba(test[FEATURES])[:, 1]
+    # Selection cannot access test: labels must have matured at each decision.
+    factories = {"random_forest": make_pipeline, "logistic_regression": make_logistic_pipeline}
+    folds = []
+    first_month = (orders.order_purchase_timestamp.min().to_period("M") + 1).to_timestamp()
+    for validation_t0 in snapshots[:-1]:
+        earlier = [t for t in pd.date_range(first_month, validation_t0, freq="MS")
+                   if t + HORIZON <= validation_t0]
+        earlier_frames = [build_snapshot(orders, t, observation_end, label_known_by=validation_t0) for t in earlier]
+        earlier_frames = [f[f.churn_proxy_180d.notna()] for f in earlier_frames if not f.empty]
+        earlier_frames = [f for f in earlier_frames if not f.empty]
+        fold_train = (pd.concat(earlier_frames, ignore_index=True) if earlier_frames
+                      else data.iloc[:0].copy())
+        validation = build_snapshot(orders, validation_t0, observation_end, label_known_by=TEST_T0)
+        validation = validation[validation.churn_proxy_180d.notna()].copy()
+        folds.append((validation_t0, fold_train, validation))
+    decision, validation_audit, validation_predictions = select_configuration(folds, factories, FEATURES, TEST_T0)
+    fitted = {}
+    for name, factory in factories.items():
+        fitted[name] = factory().fit(train[FEATURES], train.churn_proxy_180d.astype(int))
+    selected_name, threshold = decision["selected_model"], decision["threshold"]
+    model = fitted[selected_name]
+    candidate_thresholds = {name: decision["candidate_results"].get(name, {}).get("threshold", .5) for name in factories}
+    prob = positive_probability(model, test[FEATURES])
+    random_forest_prob = positive_probability(fitted["random_forest"], test[FEATURES])
+    logistic_prob = positive_probability(fitted["logistic_regression"], test[FEATURES])
     data["churn_probability"] = np.nan
     data["predicted_churn"] = pd.Series(pd.NA, index=data.index, dtype="Int64")
     data.loc[test.index, "churn_probability"] = prob
-    data.loc[test.index, "predicted_churn"] = (prob >= 0.5).astype(int)
+    data.loc[test.index, "predicted_churn"] = (prob >= threshold).astype(int)
     data["score_decile"] = pd.Series(pd.NA, index=data.index, dtype="Int64")
     data.loc[test.index, "score_decile"] = score_deciles(pd.Series(prob, index=test.index))
     data["logistic_churn_probability"] = np.nan
     data.loc[test.index, "logistic_churn_probability"] = logistic_prob
-    metrics = score_metrics(test.churn_proxy_180d.astype(int).to_numpy(), prob)
+    data["random_forest_churn_probability"] = np.nan
+    data.loc[test.index, "random_forest_churn_probability"] = random_forest_prob
+    metrics = score_metrics(test.churn_proxy_180d.astype(int).to_numpy(), prob, threshold)
     y_test = test.churn_proxy_180d.astype(int).to_numpy()
     comparisons = {
-        "random_forest": metrics.copy(),
-        "logistic_regression": score_metrics(y_test, logistic_prob),
+        "random_forest": score_metrics(y_test, random_forest_prob, candidate_thresholds["random_forest"]),
+        "logistic_regression": score_metrics(y_test, logistic_prob, candidate_thresholds["logistic_regression"]),
         "always_no_repurchase": score_metrics(y_test, np.ones(len(y_test))),
-        "note": "Same temporal test; threshold 0.5 fixed without test tuning; minority support is small.",
+        "note": "Same historical test; model/threshold chosen before evaluation, never tuned on test. See validation_protocol.json. Test was already reviewed in earlier versions; no pristine holdout is claimed.",
     }
     metrics.update({
         "version": VERSION, "source_status": (
@@ -266,20 +298,49 @@ def main():
         "train_return_0": int(train.churn_proxy_180d.eq(0).sum()), "train_no_repurchase_1": int(train.churn_proxy_180d.eq(1).sum()),
         "test_customers": test.customer_unique_id.nunique(), "unevaluated_rows": int(data.split.eq("not_evaluated").sum()),
         "train_test_customer_overlap": len(set(train.customer_unique_id) & set(test.customer_unique_id)),
-        "selection": "Dùng tham số mặc định RandomForest, class_weight=balanced, threshold 0.5; không tối ưu bằng test; chưa có CV theo thời gian do lịch sử ngắn.",
+        "selection": decision["reason"], "selected_model": selected_name,
+        "validation_status": decision["selection_status"],
+        "quality_status": "experimental_not_validated_for_deployment",
+        "observation_end_status": "assumed_not_confirmed_by_dataset_provider",
+        "test_previously_reviewed": True,
+        "all_test_predictions_same_class": bool(np.unique(prob >= threshold).size == 1),
+        "repurchase_prevalence": float(np.mean(y_test == 0)),
+        "test_used_for_selection": False,
     })
     out = args.output_dir
     out.mkdir(parents=True, exist_ok=True)
-    eval_cols = ["sample_id", "customer_unique_id", "snapshot_timestamp", "prediction_window_end", "churn_proxy_180d", "label_status_or_reason", "split", "churn_probability", "predicted_churn", "score_decile", "logistic_churn_probability"] + FEATURES
+    eval_cols = ["sample_id", "customer_unique_id", "snapshot_timestamp", "prediction_window_end", "churn_proxy_180d", "label_status_or_reason", "split", "churn_probability", "predicted_churn", "score_decile", "random_forest_churn_probability", "logistic_churn_probability"] + FEATURES
     data[eval_cols].to_csv(out / "snapshot_evaluation.csv", index=False, encoding="utf-8-sig", lineterminator="\n")
     (out / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
     (out / "baseline_comparison.json").write_text(json.dumps(comparisons, ensure_ascii=False, indent=2), encoding="utf-8")
     pd.DataFrame(metrics["classification_report"]).transpose().to_csv(out / "classification_report.csv", encoding="utf-8-sig")
     pd.DataFrame(metrics["confusion_matrix_actual_rows_predicted_columns_0_1"], index=["actual_return_0", "actual_no_repurchase_1"], columns=["predicted_return_0", "predicted_no_repurchase_1"]).to_csv(out / "confusion_matrix.csv", encoding="utf-8-sig")
-    joblib.dump({"pipeline": model, "features": FEATURES, "model_version": VERSION, "threshold": 0.5, "metrics": metrics}, out / "random_forest_temporal.joblib", compress=3)
-    joblib.dump({"pipeline": logistic, "features": FEATURES, "threshold": 0.5}, out / "logistic_regression_temporal.joblib", compress=3)
+    (out / "validation_protocol.json").write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8")
+    validation_audit.to_csv(out / "validation_fold_audit.csv", index=False, encoding="utf-8-sig")
+    validation_predictions.to_csv(out / "validation_predictions.csv", index=False, encoding="utf-8-sig")
+    selected_bundle = {"pipeline": model, "features": FEATURES, "numeric_features": NUMERIC,
+                       "model_version": VERSION, "model_name": selected_name, "threshold": threshold,
+                       "metrics": metrics, "selection_protocol": decision}
+    joblib.dump(selected_bundle, out / "selected_model.joblib", compress=3)
+    for name, filename in [("random_forest", "random_forest_temporal.joblib"), ("logistic_regression", "logistic_regression_temporal.joblib")]:
+        joblib.dump({**selected_bundle, "pipeline": fitted[name], "model_name": name,
+                     "threshold": candidate_thresholds[name], "metrics": comparisons[name]}, out / filename, compress=3)
     features = model.named_steps["preprocess"].get_feature_names_out()
-    pd.DataFrame({"feature": features, "importance": model.named_steps["model"].feature_importances_}).sort_values("importance", ascending=False).to_csv(out / "feature_importance.csv", index=False, encoding="utf-8-sig")
+    estimator = model.named_steps["model"]
+    importance = (pd.DataFrame({"feature": features, "importance": estimator.feature_importances_, "method": "impurity_importance"})
+                  if hasattr(estimator, "feature_importances_") else
+                  pd.DataFrame({"feature": features, "importance": np.abs(estimator.coef_[0]), "coefficient": estimator.coef_[0], "method": "absolute_logistic_coefficient"}))
+    importance.sort_values("importance", ascending=False).to_csv(out / "feature_importance.csv", index=False, encoding="utf-8-sig")
+    diagnostics = []
+    for name, fitted_model in fitted.items():
+        for split_name, sample in [("train_in_sample", train), ("test_historical", test)]:
+            diagnostics.append(probability_summary(sample.churn_proxy_180d.astype(int),
+                positive_probability(fitted_model, sample[FEATURES]), split_name, name, candidate_thresholds[name]))
+    for name in factories:
+        sample = validation_predictions[validation_predictions.model.eq(name)]
+        if not sample.empty:
+            diagnostics.append(probability_summary(sample.actual, sample.churn_probability, "validation", name, candidate_thresholds[name]))
+    pd.concat(diagnostics, ignore_index=True).to_csv(out / "probability_summary.csv", index=False, encoding="utf-8-sig")
     if len(np.unique(test.churn_proxy_180d.astype(int))) == 2:
         precision, recall, thresholds = precision_recall_curve(test.churn_proxy_180d.astype(int), prob, pos_label=1)
         pd.DataFrame({"precision_churn_1": precision, "recall_churn_1": recall, "threshold": np.r_[thresholds, np.nan]}).to_csv(out / "precision_recall_churn_1.csv", index=False, encoding="utf-8-sig")
@@ -337,10 +398,17 @@ def main():
     importance = pd.read_csv(out / "feature_importance.csv").head(15).sort_values("importance")
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.barh(importance.feature, importance.importance, color="#457B9D")
-    ax.set_title("15 feature quan trọng - Random Forest")
+    ax.set_title(f"15 feature quan trọng - {selected_name}")
     fig.tight_layout()
     fig.savefig(charts / "feature_importance.png", dpi=160)
     plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    for label, name in [(0, "Repurchased (0)"), (1, "No repurchase (1)")]:
+        ax.hist(prob[y_test == label], bins=np.linspace(0, 1, 21), alpha=.55, label=name)
+    ax.axvline(threshold, color="black", linestyle="--", label=f"Threshold={threshold:.2f}")
+    ax.set(xlabel="Estimated no-repurchase probability (uncalibrated)", ylabel="Customers", title=f"Historical test probability distribution - {selected_name}")
+    ax.legend(); fig.tight_layout(); fig.savefig(charts / "probability_distribution.png", dpi=160); plt.close(fig)
 
     counts = []
     scope_totals = []
@@ -361,11 +429,11 @@ def main():
 
     eligible = build_snapshot(orders, BI_T0, observation_end)
     eligible["churn_probability"] = (
-        model.predict_proba(eligible[FEATURES])[:, 1] if not eligible.empty
+        positive_probability(model, eligible[FEATURES]) if not eligible.empty
         else pd.Series(dtype="float64", index=eligible.index)
     )
     eligible["score_decile"] = score_deciles(eligible.churn_probability)
-    eligible["risk_level"] = np.where(eligible.churn_probability.ge(0.5), "cao", "thap")
+    eligible["risk_level"] = np.where(eligible.churn_probability.ge(threshold), "cao", "thap")
     eligible["eligibility_status"] = "du_dieu_kien"
     universe = orders.loc[orders.order_purchase_timestamp.lt(BI_T0), ["customer_unique_id"]].dropna().drop_duplicates()
     bi = universe.merge(eligible[["customer_unique_id", "churn_probability", "score_decile", "risk_level", "eligibility_status"]], on="customer_unique_id", how="left", validate="one_to_one")
@@ -376,11 +444,41 @@ def main():
     bi["kmeans_data_status"] = np.where(bi.kmeans_cluster.notna(), "mo_ta_hoi_cuu_trang_thai_cuoi", "khong_co_cum")
     bi["cutoff_timestamp"] = BI_T0
     bi["model_version"] = VERSION
+    bi["model_name"] = selected_name
+    bi["prediction_threshold"] = np.where(bi.eligibility_status.eq("du_dieu_kien"), threshold, np.nan)
+    bi["repurchase_probability"] = 1 - bi.churn_probability
+    bi["predicted_churn"] = pd.Series(pd.NA, index=bi.index, dtype="Int64")
+    included = bi.eligibility_status.eq("du_dieu_kien")
+    bi.loc[included, "predicted_churn"] = bi.loc[included, "churn_probability"].ge(threshold).astype(int)
+    bi["eligibility_reason"] = np.where(included, "at_least_2_confirmed_valid_deliveries_active_180d", "insufficient_confirmed_history_or_inactive_180d")
+    bi["model_quality_status"] = metrics["quality_status"]
     bi["risk_label_status"] = np.where(bi.eligibility_status.eq("du_dieu_kien"), "tham_khao_chua_hieu_chuan", pd.NA)
     bi["source_version"] = file_hash(args.master)[:12] + "-" + file_hash(args.clean_orders)[:12]
     bi["churn_proxy_180d"] = pd.NA
     bi["label_status_or_reason"] = "insufficient_followup"
     bi.to_csv(out / "bi_web_customers.csv", index=False, encoding="utf-8-sig", lineterminator="\n")
+    final_test = data.loc[test.index, ["customer_unique_id", "split", "snapshot_timestamp", "prediction_window_end", "churn_proxy_180d", "churn_probability", "predicted_churn", "score_decile"]].copy()
+    final_test = final_test.rename(columns={"snapshot_timestamp": "cutoff_timestamp"})
+    final_test["repurchased_true"] = 1 - final_test.churn_proxy_180d.astype(int)
+    final_test["repurchase_probability"] = 1 - final_test.churn_probability
+    final_test["prediction_threshold"] = threshold
+    final_test["model_name"], final_test["model_version"] = selected_name, VERSION
+    if not final_test.customer_unique_id.is_unique:
+        raise ValueError("Test handoff requires one row per customer")
+    final_test.to_csv(out / "test_predictions.csv", index=False, encoding="utf-8-sig")
+    contract = {"version": VERSION, "selected_model": selected_name, "threshold": threshold,
+        "test_file": "test_predictions.csv", "bi_file": "bi_web_customers.csv",
+        "evaluation_key": "customer_unique_id (one row per test cutoff)",
+        "snapshot_key": "customer_unique_id", "label_one": "no repurchase in [T0,T0+180d)",
+        "repurchased_true": "1 - churn_proxy_180d; test only, never fill future unknown labels",
+        "score_decile": "1 = highest churn_probability, ties resolved by stable input order; not repurchase lift ranking",
+        "bi_cutoff_exclusive": str(BI_T0), "rfm_reference_date": "2018-08-30",
+        "timestamps": "naive source timestamps; original timezone not confirmed",
+        "eligibility": "2+ delivered orders confirmed before T0, valid_delay_kpi true, recency<=180d",
+        "missing_probability": "not scored, never zero risk", "quality_status": metrics["quality_status"],
+        "kmeans_status": "retrospective descriptive final status; not a supervised feature",
+        "selection_status": decision["selection_status"], "observation_end_status": metrics["observation_end_status"]}
+    (out / "data_contract.json").write_text(json.dumps(contract, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(metrics, ensure_ascii=False, indent=2))
     print(f"BI/web: {len(bi):,} khách; đủ điều kiện: {len(eligible):,}")
     export_summary(out)

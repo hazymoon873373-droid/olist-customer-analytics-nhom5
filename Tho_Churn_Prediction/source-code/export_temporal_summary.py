@@ -34,6 +34,9 @@ def export_summary(output_dir):
         ["AP mua lại (0)", metrics["average_precision_repurchase_0"]],
         ["Top decile lift lớp 1", metrics["top_decile_lift_churn_1"]],
         ["Thứ tự decile", metrics["top_decile_ranked_by"]], ["Ngưỡng dự đoán", metrics["threshold"]],
+        ["Mô hình dùng bàn giao", metrics["selected_model"]],
+        ["Validation", metrics["validation_status"]], ["Chất lượng", metrics["quality_status"]],
+        ["Test đã được xem trước trong bản cũ", metrics["test_previously_reviewed"]],
     ], [34, 65])
     report = metrics["classification_report"]
     write_sheet("Classification", [["Nhóm", "Precision", "Recall", "F1", "Support"]] + [
@@ -44,7 +47,7 @@ def export_summary(output_dir):
     write_sheet("Confusion_matrix", [["Thực tế / dự đoán", "Mua lại (0)", "Không mua lại (1)"],
                                      ["Mua lại (0)", *matrix[0]], ["Không mua lại (1)", *matrix[1]]], [26, 20, 24])
     importance = pd.read_csv(output_dir / "feature_importance.csv").head(20)
-    write_sheet("Feature_importance", [["Feature", "Importance"]] + importance.values.tolist(), [45, 22])
+    write_sheet("Feature_importance", [importance.columns.tolist()] + importance.values.tolist(), [45] + [22] * (len(importance.columns) - 1))
     comparison_path = output_dir / "baseline_comparison.json"
     if comparison_path.exists():
         comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
@@ -54,8 +57,12 @@ def export_summary(output_dir):
             report = metric["classification_report"]
             rows.append([name, report["accuracy"], report["0"]["recall"], report["0"]["precision"], report["0"]["f1-score"], metric["roc_auc_churn_1"]])
         write_sheet("Baseline_comparison", rows, [28, 16, 20, 22, 18, 16])
+    for filename, sheet in [("validation_fold_audit.csv", "Validation_audit"),
+                            ("probability_summary.csv", "Probability_summary")]:
+        frame = pd.read_csv(output_dir / filename)
+        write_sheet(sheet, [frame.columns.tolist()] + frame.astype(object).where(frame.notna(), None).values.tolist(), [24] * len(frame.columns))
     workbook.close()
 
 
 if __name__ == "__main__":
-    export_summary(Path(__file__).resolve().parents[1] / "outputs" / "temporal_v3_provisional")
+    export_summary(Path(__file__).resolve().parents[1] / "outputs" / "temporal_v4_provisional")

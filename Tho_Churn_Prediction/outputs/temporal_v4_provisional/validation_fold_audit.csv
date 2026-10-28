@@ -1,0 +1,7 @@
+﻿validation_t0,selection_known_by,train_rows,validation_rows,train_customers,train_return_customers,train_no_repurchase_customers,validation_customers,validation_return_customers,validation_no_repurchase_customers,usable,reason,min_unique_per_class
+2017-04-01 00:00:00,2018-03-01 00:00:00,0,73,0,0,0,73,0,73,False,insufficient_distinct_customers_in_class,5
+2017-05-01 00:00:00,2018-03-01 00:00:00,2,111,2,0,2,111,3,108,False,insufficient_distinct_customers_in_class,5
+2017-06-01 00:00:00,2018-03-01 00:00:00,5,184,3,0,3,184,6,178,False,insufficient_distinct_customers_in_class,5
+2017-07-01 00:00:00,2018-03-01 00:00:00,8,277,3,0,3,277,11,266,False,insufficient_distinct_customers_in_class,5
+2017-08-01 00:00:00,2018-03-01 00:00:00,23,345,15,0,15,345,16,329,False,insufficient_distinct_customers_in_class,5
+2017-09-01 00:00:00,2018-03-01 00:00:00,59,437,36,0,36,437,22,415,False,insufficient_distinct_customers_in_class,5

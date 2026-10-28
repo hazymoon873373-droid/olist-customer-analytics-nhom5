@@ -44,6 +44,9 @@
     "top_decile_ranked_by": "churn_probability",
     "top_decile_count": 95,
     "top_decile_lift_churn_1": 1.031390977443609,
+    "all_scores_equal": false,
+    "top_decile_ties_at_boundary": 297,
+    "top_decile_tie_policy": "stable input order; constant-score baseline has expected lift 1, no ranking advantage",
     "roc_auc_churn_1": 0.6420084635416666,
     "average_precision_churn_1": 0.9665696269275527,
     "average_precision_repurchase_0": 0.08058383751593876
@@ -93,6 +96,9 @@
     "top_decile_ranked_by": "churn_probability",
     "top_decile_count": 95,
     "top_decile_lift_churn_1": 1.0424812030075188,
+    "all_scores_equal": false,
+    "top_decile_ties_at_boundary": 1,
+    "top_decile_tie_policy": "stable input order; constant-score baseline has expected lift 1, no ranking advantage",
     "roc_auc_churn_1": 0.6253720238095238,
     "average_precision_churn_1": 0.9669081947137139,
     "average_precision_repurchase_0": 0.11330509508085965
@@ -141,10 +147,13 @@
     ],
     "top_decile_ranked_by": "churn_probability",
     "top_decile_count": 95,
-    "top_decile_lift_churn_1": 1.031390977443609,
+    "top_decile_lift_churn_1": 1.0,
+    "all_scores_equal": true,
+    "top_decile_ties_at_boundary": 944,
+    "top_decile_tie_policy": "stable input order; constant-score baseline has expected lift 1, no ranking advantage",
     "roc_auc_churn_1": 0.5,
     "average_precision_churn_1": 0.9491525423728814,
     "average_precision_repurchase_0": 0.05084745762711865
   },
-  "note": "Same temporal test; threshold 0.5 fixed without test tuning; minority support is small."
+  "note": "Same historical test; model/threshold chosen before evaluation, never tuned on test. See validation_protocol.json. Test was already reviewed in earlier versions; no pristine holdout is claimed."
 }

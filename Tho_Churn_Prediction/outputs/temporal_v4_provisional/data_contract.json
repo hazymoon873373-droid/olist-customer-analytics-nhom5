@@ -1,0 +1,21 @@
+{
+  "version": "temporal_v4_20261029_provisional",
+  "selected_model": "random_forest",
+  "threshold": 0.5,
+  "test_file": "test_predictions.csv",
+  "bi_file": "bi_web_customers.csv",
+  "evaluation_key": "customer_unique_id (one row per test cutoff)",
+  "snapshot_key": "customer_unique_id",
+  "label_one": "no repurchase in [T0,T0+180d)",
+  "repurchased_true": "1 - churn_proxy_180d; test only, never fill future unknown labels",
+  "score_decile": "1 = highest churn_probability, ties resolved by stable input order; not repurchase lift ranking",
+  "bi_cutoff_exclusive": "2018-08-31 00:00:00",
+  "rfm_reference_date": "2018-08-30",
+  "timestamps": "naive source timestamps; original timezone not confirmed",
+  "eligibility": "2+ delivered orders confirmed before T0, valid_delay_kpi true, recency<=180d",
+  "missing_probability": "not scored, never zero risk",
+  "quality_status": "experimental_not_validated_for_deployment",
+  "kmeans_status": "retrospective descriptive final status; not a supervised feature",
+  "selection_status": "blocked_insufficient_temporal_validation",
+  "observation_end_status": "assumed_not_confirmed_by_dataset_provider"
+}

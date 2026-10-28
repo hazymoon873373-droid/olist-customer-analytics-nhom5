@@ -43,10 +43,13 @@
   "top_decile_ranked_by": "churn_probability",
   "top_decile_count": 95,
   "top_decile_lift_churn_1": 1.031390977443609,
+  "all_scores_equal": false,
+  "top_decile_ties_at_boundary": 297,
+  "top_decile_tie_policy": "stable input order; constant-score baseline has expected lift 1, no ranking advantage",
   "roc_auc_churn_1": 0.6420084635416666,
   "average_precision_churn_1": 0.9665696269275527,
   "average_precision_repurchase_0": 0.08058383751593876,
-  "version": "rf_temporal_v3_20261028_provisional",
+  "version": "temporal_v4_20261029_provisional",
   "source_status": "Đã dùng master 28/10 và bảng sạch; mốc theo dõi chờ nhóm xác nhận",
   "master_sha256": "59b98b686c3bde39d50d7502d94637e708b37f20530466917da241aa06344f3e",
   "clean_orders_sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8",
@@ -76,8 +79,8 @@
       "sha256": "f150d8ff15bdb615f65698d9bd8ad1b0801c98e13e120d9a10064118845f8301"
     }
   },
-  "master_modified_time_utc": "2026-10-28T08:45:54.633626461+00:00",
-  "clean_orders_modified_time_utc": "2026-10-28T08:45:54.470802546+00:00",
+  "master_modified_time_utc": "2026-10-28T17:03:28.697657585+00:00",
+  "clean_orders_modified_time_utc": "2026-10-28T17:03:28.487817764+00:00",
   "observation_end_exclusive": "2018-08-31 00:00:00",
   "test_t0": "2018-03-01 00:00:00",
   "train_max_label_end": "2018-02-28 00:00:00",
@@ -88,5 +91,13 @@
   "test_customers": 944,
   "unevaluated_rows": 0,
   "train_test_customer_overlap": 21,
-  "selection": "Dùng tham số mặc định RandomForest, class_weight=balanced, threshold 0.5; không tối ưu bằng test; chưa có CV theo thời gian do lịch sử ngắn."
+  "selection": "No eligible two-class temporal validation; retain documented RF/0.5 baseline, do not tune on test.",
+  "selected_model": "random_forest",
+  "validation_status": "blocked_insufficient_temporal_validation",
+  "quality_status": "experimental_not_validated_for_deployment",
+  "observation_end_status": "assumed_not_confirmed_by_dataset_provider",
+  "test_previously_reviewed": true,
+  "all_test_predictions_same_class": true,
+  "repurchase_prevalence": 0.05084745762711865,
+  "test_used_for_selection": false
 }

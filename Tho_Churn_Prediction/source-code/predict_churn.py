@@ -10,7 +10,7 @@ import pandas as pd
 from prediction_utils import score_deciles
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL = PROJECT_DIR / "outputs/temporal_v3_provisional/random_forest_temporal.joblib"
+DEFAULT_MODEL = PROJECT_DIR / "outputs/temporal_v4_provisional/selected_model.joblib"
 
 
 def model_schema(bundle, model_name):
