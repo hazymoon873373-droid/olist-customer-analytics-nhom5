@@ -1,5 +1,8 @@
 # Các bước thực hiện dự đoán churn proxy 180 ngày
 
+> Tài liệu này ghi lại phiên bản cũ chia theo nhóm khách. Quy ước nhãn, cơ sở chọn 180 ngày
+> và kết quả theo thời gian của bản mới được trình bày trong `bao_cao_temporal_v2.md`.
+
 ## 1. Xác định bài toán
 
 Bài toán dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Do Olist không có cột churn chính thức, nhãn trong bài là nhãn thay thế:

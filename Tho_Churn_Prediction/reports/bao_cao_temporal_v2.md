@@ -1,5 +1,31 @@
 # Đánh giá Random Forest theo thời gian — bản tạm thời
 
+## Cơ sở chọn cửa sổ 180 ngày
+
+Trong thương mại điện tử không có hợp đồng duy trì mua hàng, việc khách tạm ngừng giao dịch không
+cho biết chắc họ đã rời bỏ. Vì vậy bài toán dùng nhãn thay thế: không mua lại trong một khoảng
+thời gian đã chọn, thay vì khẳng định khách rời bỏ vĩnh viễn.
+
+Zeinali, Ramezani Asli và Khalili (2026) sử dụng dữ liệu Olist và chọn ngưỡng 180 ngày để xác định
+khách không còn hoạt động. Các tác giả báo cáo khoảng 88% khoảng cách giữa các lần mua lặp lại
+được khảo sát nằm trong 180 ngày. Con số này là kết quả của bài nghiên cứu, **không phải số liệu
+nhóm đã tự tính hoặc xác nhận trên phiên bản dữ liệu hiện tại**. Ngưỡng 180 ngày là quy ước phù hợp
+để tham khảo, không phải chuẩn bắt buộc cho mọi sàn hoặc mọi ngành hàng.
+
+Nghiên cứu mô tả cả việc xác định không hoạt động trong 180 ngày cuối của giai đoạn quan sát và
+thiết kế dự đoán dựa trên một mốc T0 với cửa sổ nhãn 180 ngày tiếp theo. Phần supervised của nhóm
+áp dụng cách thứ hai: tính đặc trưng trước T0 rồi quan sát đơn mua trong `[T0, T0 + 180 ngày)`.
+Không dùng tình trạng `Recency >= 180` tại ngày chốt làm nhãn dự đoán cho cùng ngày đó.
+
+Tài liệu tham khảo:
+
+> Zeinali, M., Ramezani Asli, L., & Khalili, M. A. (2026). *Integrating Business Intelligence and CRM
+> Systems With a Machine Learning Approach for Predictive Customer Retention in E-Commerce*.
+> The Scientific World Journal, 2026, 1946904. <https://doi.org/10.1155/tswj/1946904>
+
+Nhóm chưa chạy lại thống kê khoảng cách mua, kiểm tra độ nhạy với ngưỡng khác hoặc xác nhận mốc
+đầy đủ dữ liệu; vì vậy các nội dung đó không được trình bày là kết quả đã đạt của đồ án.
+
 ## Trạng thái dữ liệu
 
 Bản thử dùng `olist_powerbi_orders_master.csv` cũ ngày 23/10/2026 và `olist_orders_clean.csv`

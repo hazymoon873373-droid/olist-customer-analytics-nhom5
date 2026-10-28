@@ -11,6 +11,11 @@ python -B Tho_Churn_Prediction/source-code/run_all.py --clean-orders "D:\duong-d
 
 Tham số `--master` chọn master khác; `--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định cho bản thử, cần nhóm xác nhận nguồn và thời gian đủ dữ liệu. Kết quả mới được tạo trong `outputs/temporal_v2_provisional/`, gồm CSV snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI và xác suất hiện chỉ để thử tích hợp vì model dự đoán toàn bộ test là không mua lại.
 
+Ngưỡng 180 ngày được tham khảo từ nghiên cứu của Zeinali và cộng sự (2026) trên dữ liệu Olist:
+[bài nghiên cứu](https://doi.org/10.1155/tswj/1946904). Bản dự đoán của nhóm dùng cửa sổ
+`[T0, T0 + 180 ngày)` và gọi nhãn 1 là “không mua lại trong 180 ngày”, không khẳng định
+khách rời bỏ vĩnh viễn. Chi tiết và giới hạn của nguồn được ghi trong báo cáo temporal v2.
+
 ---
 
 ## Bản đối chiếu cũ theo nhóm khách
