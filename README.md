@@ -1,58 +1,53 @@
-# Olist Customer Analytics — Nhóm 5
+# Olist Customer Analytics nhóm 5
 
-Môn ABDA433708. Phân tích khách hàng và nguy cơ không mua lại trên Olist bằng MongoDB và Machine Learning.
+Môn ABDA433708. Phân tích khách hàng, phân khúc RFM và nguy cơ không mua lại trong 180 ngày trên Olist bằng MongoDB và Machine Learning.
 
-## Phân nhánh
+## Cấu trúc và phiên bản sử dụng
 
-| Nhánh | Người phụ trách | Nội dung |
-|---|---|---|
-| main | Huy điều phối | Bản tích hợp chung đã thống nhất |
-| codex/huy-thu-thap | Huy | Thu thập Kaggle, API IBGE, dữ liệu thô, metadata và giám sát |
-| codex/thien-etl-mongodb | Thiên | Làm sạch, kiểm định, MongoDB |
-| codex/tam-bi | Tâm | EDA, KPI và Power BI |
-| codex/tho-machine-learning | Thọ | RFM, K-Means, mô hình nguy cơ không mua lại |
-| codex/ngan-web-bao-cao | Ngân | Website, khai thác dữ liệu và báo cáo theo phân công nhóm |
+| Phần | Điểm bắt đầu |
+|---|---|
+| Thu thập và bằng chứng nguồn của Huy | `Huy_ThuThap_Olist/README.md` |
+| Làm sạch và MongoDB của Thiên | `HUONG_DAN_BAN_GIAO.md`, `clean_olist.py`, `Mongodb.js` |
+| Dữ liệu sạch chung của ML | `Tho_Shared/README.md` |
+| RFM và K-Means | `Tho_RFM_KMeans/README.md` |
+| Dự đoán không mua lại | `Tho_Churn_Prediction/README.md` |
+| Phát hiện đơn bất thường | `Tho_Order_Anomaly/README.md` |
+| Website của Ngân | Nhánh `codex/ngan-web-bao-cao`, đọc `HUONG_DAN_WEB.md` trên nhánh đó |
+| BI của Tâm | Nhánh `codex/tam-bi`; bản RFM đã nhận được lưu trong `Tho_Shared/data/` |
 
-Các nhánh ban đầu cùng chứa gói thu thập của Huy. Thành viên làm trên nhánh của mình rồi mở Pull Request vào main để nhóm kiểm tra trước khi hợp nhất. Chưa đưa sản phẩm của Thiên, Tâm, Thọ hoặc Ngân vào đợt push này.
+`main` là bản sử dụng chung của phần thu thập, ETL/MongoDB và ML đã tích hợp. Website vẫn có nhánh riêng và hướng dẫn dữ liệu riêng; việc dọn mã nguồn không thay thế công việc tích hợp dashboard và ML vào web. Không dùng code cũ còn nằm ở commit trước làm bản đang chạy.
 
-## Phần đã bàn giao
-
-Thư mục `Huy_ThuThap_Olist/` chứa code Python, cấu hình VS Code, snapshot dữ liệu thô, ZIP nguồn, phản hồi API, metadata, log và báo cáo kiểm tra. Đọc README trong thư mục đó để xem chi tiết nguồn và giới hạn dữ liệu.
-
-Snapshot: `20261019T171446Z_e35970`. Có 9 CSV Olist (99.441 đơn hàng) và JSON IBGE (27 đơn vị liên bang). Các số lượng cộng giữa nhiều bảng không phải số khách hàng duy nhất.
-
-Nhánh `codex/tho-machine-learning` có thêm thư mục `Tho_RFM_KMeans/`. Phần này tạo lại bảng RFM từ order master, đánh giá K từ 2 đến 10 và huấn luyện K-Means với K=4. Model, bảng gán nhãn, biểu đồ và nội dung báo cáo được lưu cùng thư mục.
-
-Nhánh này cũng có thư mục `Tho_Churn_Prediction/`. Phần supervised learning tạo nhãn churn proxy 180 ngày theo rolling snapshot cho khách đã có ít nhất hai đơn, huấn luyện Random Forest, xuất model, dự đoán test, biểu đồ và báo cáo. Feature chỉ dùng thông tin có trước từng snapshot.
-
-Thư mục `Tho_Order_Anomaly/` dùng Isolation Forest để khảo sát các đơn hàng đã giao có đặc điểm bất thường. Phần này có Pipeline, model, CSV chấm điểm, biểu đồ, Excel tổng hợp và nội dung báo cáo.
-
-Nguồn đầu vào mới cho ba phần ML nằm trong `Tho_Shared/data/`. K-Means được giữ sau đối soát RFM;
-Isolation Forest đã chạy lại; kết quả Random Forest theo thời gian và hai bảng tích hợp nằm trong
-`Tho_Churn_Prediction/outputs/temporal_v3_provisional/`. Mốc theo dõi 180 ngày cần nhóm xác nhận;
-model hiện chưa nhận diện được khách mua lại ở tập test nên bảng BI chỉ để thử tích hợp.
-
-## Bắt đầu
+## Chạy từ một bản clone mới
 
 ```powershell
 git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
 cd olist-customer-analytics-nhom5
-git switch codex/huy-thu-thap
-cd Huy_ThuThap_Olist
-python -B source-code/verify_run.py
-python -B -m unittest discover -s source-code/tests -v
 ```
 
-Thay tên nhánh bằng nhánh được phân công. Python 3.10+; phần thu thập chỉ dùng thư viện chuẩn. Mở riêng `Huy_ThuThap_Olist` trong VS Code để sử dụng cấu hình F5. Lệnh thu thập mới: `python -B source-code/collect_all.py`.
+Phần thu thập chỉ cần Python 3.10+ và thư viện chuẩn:
 
-Chỉ snapshot bàn giao được theo dõi bằng Git; run mới được bỏ qua để tránh vô tình đưa thêm nhiều bản dữ liệu vào lịch sử. Dùng thư mục riêng cho sản phẩm từng thành viên, giữ raw nguyên vẹn. Không commit mật khẩu, token, URI MongoDB có thông tin đăng nhập hoặc `.env`.
+```powershell
+python -X utf8 -B Huy_ThuThap_Olist/source-code/verify_run.py
+```
 
-## Nguồn và phạm vi
+Phần ML dùng môi trường riêng theo requirements của từng mô-đun. Ví dụ churn:
 
-- Olist: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce — ghi công Olist, CC BY-NC-SA 4.0 theo hồ sơ nguồn.
-- IBGE: https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome — tham chiếu địa lý tại thời điểm thu thập.
-- Giữ các điều kiện nguồn khi sử dụng/chia sẻ dữ liệu. Không áp dụng giấy phép mã nguồn mới cho dữ liệu bên thứ ba.
-- Nhãn không mua lại là proxy, không phải churn chính thức. Features ML chỉ dùng thông tin đã biết trước T0.
-- Kiểm tra phần Huy: 7 tests và 21 kiểm tra dữ liệu đạt; chưa chứng nhận phần MongoDB, BI, ML hoặc toàn bộ đồ án.
+```powershell
+python -m venv .venv-ml
+.\.venv-ml\Scripts\python.exe -m pip install -r Tho_Churn_Prediction/requirements.txt
+.\.venv-ml\Scripts\python.exe -B Tho_Churn_Prediction/source-code/run_all.py
+.\.venv-ml\Scripts\python.exe -B -m unittest discover -s Tho_Churn_Prediction/tests -v
+```
 
-Repo riêng tư: chủ repo cần cấp quyền GitHub cho từng thành viên để họ clone/push; tạo nhánh không tự cấp quyền truy cập.
+Kiểm tra và giữ K-Means hiện tại: `python -B Tho_RFM_KMeans/source-code/verify_rfm.py`. Isolation Forest: `python -B Tho_Order_Anomaly/source-code/run_all.py` sau khi cài requirements tương ứng. Mỗi bộ test chạy riêng theo thư mục mô-đun.
+
+ETL/MongoDB dùng `requirements.txt` ở gốc; đọc `HUONG_DAN_BAN_GIAO.md` và `HUONG_DAN_BACKUP_RESTORE.md`. Script MongoDB có cập nhật dữ liệu/index; kiểm tra đúng database và bản sao lưu trước khi chạy. Code test giả lập không thay thế kiểm thử trên server thật.
+
+## Dữ liệu và giới hạn
+
+- Snapshot raw của Huy chứa 9 CSV, ZIP nguồn và phản hồi API IBGE; giữ raw nguyên vẹn để đối chiếu, không nhầm tổng nhiều bảng thành số đơn hoặc số khách duy nhất.
+- Dữ liệu sử dụng hiện tại của ML nằm trong `Tho_Shared/data/`. Kết quả churn nằm duy nhất trong `Tho_Churn_Prediction/outputs/temporal_v3_provisional/`.
+- Raw Olist: [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), ghi công Olist theo hồ sơ nguồn, CC BY-NC-SA 4.0. [API IBGE](https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome) làm tham chiếu địa lý.
+- Nhãn không mua lại là proxy lịch sử. Mốc kết thúc quan sát cần nhóm xác nhận. Các điểm ML và mức rủi ro đang là kết quả thử nghiệm, không phải kết luận chắc chắn về khách hàng.
+- Các phiên bản đã bỏ khỏi gói chạy vẫn xem được trong [snapshot trước khi dọn](https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5/tree/89faa7f8e3909211543a897710e7168f65a0ff87). Không rewrite lịch sử Git để dọn file thông thường.
+- Repo công khai cho phép xem/clone; quyền push vẫn do chủ repo cấp. Không commit mật khẩu, token, URI có thông tin đăng nhập hoặc dữ liệu tài khoản ứng dụng.

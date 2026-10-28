@@ -2,7 +2,7 @@
 
 ## 1. Kiểm tra dữ liệu đầu vào
 
-File sử dụng là `olist_powerbi_orders_master.csv`, gồm 99.441 đơn hàng. Các cột cần dùng:
+File sử dụng là `Tho_Shared/data/olist_powerbi_orders_master_20261028.csv`, gồm 99.441 đơn hàng. Các cột cần dùng:
 
 - `order_id`
 - `customer_unique_id`
@@ -64,7 +64,6 @@ Tên cụm được gán từ hồ sơ RFM sau khi train, không gắn cố đ�
 - `outputs/charts/`: sáu biểu đồ phục vụ báo cáo.
 - `outputs/Ketqua_KMeans.txt`: kết quả dạng văn bản.
 - `outputs/rfm_kmeans_summary.xlsx`: bảng Excel gồm metric, hồ sơ cụm và đánh giá K.
-- `models/kmeans_rfm_pipeline.pkl`: bản model mang tên tương thích với kết quả cũ.
 
 ## 7. Kiểm tra
 

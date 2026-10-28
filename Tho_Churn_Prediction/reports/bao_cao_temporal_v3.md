@@ -56,6 +56,18 @@ theo thời gian vì lịch sử train ngắn so với khoảng cách cần thi�
 
 ## Kết quả test
 
+Đã bổ sung Logistic Regression và baseline luôn dự đoán không mua lại trên cùng tập test thời gian.
+Ngưỡng 0,5 được cố định trước, không chọn theo kết quả test. Logistic Regression nhận diện 27/48
+mẫu mua lại (recall 0,5625), nhưng chỉ 27/375 dự đoán mua lại là đúng (precision 0,0720);
+ROC-AUC là 0,6254. Random Forest có ROC-AUC 0,6420 nhưng tại ngưỡng 0,5 không nhận diện được mẫu
+mua lại nào. Baseline đa số có accuracy 0,9492. So sánh đầy đủ trong `baseline_comparison.json`.
+Chưa có căn cứ chọn mô hình này cho quyết định chăm sóc thực tế; tập test chỉ có 48 mẫu mua lại,
+thời điểm kết thúc quan sát và nhãn vẫn cần nhóm xác nhận.
+
+`score_decile` xếp theo xác suất không mua lại giảm dần, 1 là nhóm điểm cao nhất; nếu điểm trùng,
+thứ tự xuất ổn định quyết định thứ hạng. Tập BI có decile trong nhóm đủ điều kiện tại cutoff;
+decile trong bảng đánh giá được tính riêng trên tập test. Hai bảng không dùng cùng mẫu số.
+
 | Chỉ số | Kết quả |
 |---|---:|
 | Accuracy | 0,9492 |
@@ -90,6 +102,6 @@ của feature trong model, không khẳng định quan hệ nhân quả.
   Model hiện xếp toàn bộ khách đủ điều kiện vào mức cao; chỉ dùng bảng để thử tích hợp, không
   dùng trực tiếp cho quyết định chăm sóc.
 
-Bản chia nhóm khách trước đây và phiên bản temporal v2 được giữ để đối chiếu, nhưng dùng nguồn và
+Bản chia nhóm khách trước đây và temporal v2 được lưu trong lịch sử Git để đối chiếu, dùng nguồn và
 quy ước khác nhau; không xem điểm các bản là kết quả cùng một phép thử. Mô hình chưa đủ cơ sở để
 khẳng định hiệu quả dự báo thực tế hoặc chốt mốc theo dõi 180 ngày.

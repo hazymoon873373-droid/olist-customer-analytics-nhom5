@@ -12,12 +12,10 @@
 ## Model
 
 - `models/rfm_kmeans_pipeline.joblib`: model chính.
-- `models/kmeans_rfm_pipeline.pkl`: tên model tương thích với kết quả cũ.
 
 ## Dữ liệu và kết quả
 
 - `../Tho_Shared/data/`: master cập nhật, bảng sạch và bảng RFM của Tâm dùng để đối soát.
-- `data/olist_powerbi_orders_master.csv`: master cũ, chỉ giữ để đối chiếu lịch sử.
 - `outputs/rfm_rebuilt.csv`: bảng RFM tạo lại.
 - `outputs/rfm_source_check.json`: hash nguồn và kết quả đối soát R/F/M.
 - `outputs/rfm_customers_kmeans.csv`: bảng khách hàng đã gán cụm.

@@ -88,9 +88,9 @@ Tho_RFM_KMeans/
 ├── models/            # Pipeline log1p + scaler + K-Means
 ├── outputs/           # CSV, metric và biểu đồ
 ├── reports/           # Các bước thực hiện và nội dung báo cáo
-└── data/              # Bản đầu vào cũ, giữ để đối chiếu
+└── requirements.txt   # Thư viện; dữ liệu dùng chung ở ../Tho_Shared/data/
 ```
 
 Model lưu cả bước `log1p` và chuẩn hóa. Khi dự đoán chỉ cần đưa vào ba cột `recency`, `frequency`, `monetary`, không xử lý lại bằng tay.
 
-Các file mang tên giống phiên bản cũ gồm `Ketqua_KMeans.txt`, `rfm_kmeans_summary.xlsx`, ba biểu đồ `KMeans_*.png` và `kmeans_rfm_pipeline.pkl`. Nhóm có thể thay trực tiếp thư mục kết quả cũ mà không cần đổi tên file.
+Model chính duy nhất là `models/rfm_kmeans_pipeline.joblib`; biểu đồ nằm trong `outputs/charts/`. Các tên model và ảnh trùng đã được bỏ; wrapper `source-code/kmeans_rfm.py` vẫn gọi cùng lệnh train để tương thích cách chạy trước.

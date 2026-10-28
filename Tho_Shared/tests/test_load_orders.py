@@ -61,6 +61,18 @@ class LoadOrdersTests(unittest.TestCase):
         self.assertEqual(result.total_products_value, 100)
         self.assertEqual(result.region_name, "Sudeste")
 
+    def test_handover_comma_utf8_with_exact_seconds(self):
+        self.master.loc[0, "order_purchase_timestamp"] = "2018-03-01 00:00:37"
+        self.master.to_csv(self.base / "master.csv", index=False, encoding="utf-8-sig")
+        result = self.load().iloc[0]
+        self.assertEqual(result.order_purchase_timestamp, pd.Timestamp("2018-03-01 00:00:37"))
+
+    def test_handover_different_seconds_are_rejected(self):
+        self.master.loc[0, "order_purchase_timestamp"] = "2018-03-01 00:00:15"
+        self.master.to_csv(self.base / "master.csv", index=False, encoding="utf-8-sig")
+        with self.assertRaises(ValueError):
+            self.load()
+
     def test_mismatched_flags_rejected(self):
         self.clean.loc[0, "valid_delay_kpi"] = True
         self.write_sources()

@@ -45,6 +45,15 @@ def export_summary(output_dir):
                                      ["Mua lại (0)", *matrix[0]], ["Không mua lại (1)", *matrix[1]]], [26, 20, 24])
     importance = pd.read_csv(output_dir / "feature_importance.csv").head(20)
     write_sheet("Feature_importance", [["Feature", "Importance"]] + importance.values.tolist(), [45, 22])
+    comparison_path = output_dir / "baseline_comparison.json"
+    if comparison_path.exists():
+        comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
+        rows = [["Mô hình", "Accuracy", "Recall mua lại", "Precision mua lại", "F1 mua lại", "ROC-AUC"]]
+        for name in ["random_forest", "logistic_regression", "always_no_repurchase"]:
+            metric = comparison[name]
+            report = metric["classification_report"]
+            rows.append([name, report["accuracy"], report["0"]["recall"], report["0"]["precision"], report["0"]["f1-score"], metric["roc_auc_churn_1"]])
+        write_sheet("Baseline_comparison", rows, [28, 16, 20, 22, 18, 16])
     workbook.close()
 
 
