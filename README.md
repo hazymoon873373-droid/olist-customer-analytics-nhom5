@@ -25,6 +25,8 @@ Nhánh `codex/tho-machine-learning` có thêm thư mục `Tho_RFM_KMeans/`. Ph�
 
 Nhánh này cũng có thư mục `Tho_Churn_Prediction/`. Phần supervised learning tạo nhãn churn proxy 180 ngày theo rolling snapshot cho khách đã có ít nhất hai đơn, huấn luyện Random Forest, xuất model, dự đoán test, biểu đồ và báo cáo. Feature chỉ dùng thông tin có trước từng snapshot.
 
+Thư mục `Tho_Order_Anomaly/` dùng Isolation Forest để khảo sát các đơn hàng đã giao có đặc điểm bất thường. Phần này có Pipeline, model, CSV chấm điểm, biểu đồ, Excel tổng hợp và nội dung báo cáo.
+
 ## Bắt đầu
 
 ```powershell
