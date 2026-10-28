@@ -1,6 +1,5 @@
 import argparse
 import json
-import shutil
 import sys
 import time
 import tracemalloc
@@ -464,7 +463,6 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
         "selected_k": selected_k,
     }
     joblib.dump(model_bundle, model_dir / "rfm_kmeans_pipeline.joblib")
-    joblib.dump(model_bundle, model_dir / "kmeans_rfm_pipeline.pkl")
 
     final_scaled = model_pipeline[:-1].transform(rfm[FEATURE_COLUMNS])
     k_chart = chart_dir / "01_k_evaluation.png"
@@ -479,9 +477,6 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
     save_recency_monetary_chart(rfm, rm_chart)
 
     save_text_result(metrics, profiles, output_dir / "Ketqua_KMeans.txt")
-    shutil.copy2(k_chart, output_dir / "KMeans_Elbow_Silhouette.png")
-    shutil.copy2(pca_chart, output_dir / "KMeans_Clusters_2D_PCA.png")
-    shutil.copy2(rm_chart, output_dir / "KMeans_Recency_vs_Monetary.png")
     export_summary(output_dir)
 
     print("\nKẾT QUẢ K-MEANS")

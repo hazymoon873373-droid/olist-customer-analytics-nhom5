@@ -102,6 +102,6 @@ của feature trong model, không khẳng định quan hệ nhân quả.
   Model hiện xếp toàn bộ khách đủ điều kiện vào mức cao; chỉ dùng bảng để thử tích hợp, không
   dùng trực tiếp cho quyết định chăm sóc.
 
-Bản chia nhóm khách trước đây và phiên bản temporal v2 được giữ để đối chiếu, nhưng dùng nguồn và
+Bản chia nhóm khách trước đây và temporal v2 được lưu trong lịch sử Git để đối chiếu, dùng nguồn và
 quy ước khác nhau; không xem điểm các bản là kết quả cùng một phép thử. Mô hình chưa đủ cơ sở để
 khẳng định hiệu quả dự báo thực tế hoặc chốt mốc theo dõi 180 ngày.

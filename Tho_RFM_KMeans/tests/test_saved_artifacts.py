@@ -14,7 +14,6 @@ class SavedArtifactsTests(unittest.TestCase):
     def test_saved_model_matches_exported_labels(self):
         result_file = PROJECT_DIR / "outputs" / "rfm_customers_kmeans.csv"
         model_file = PROJECT_DIR / "models" / "rfm_kmeans_pipeline.joblib"
-        legacy_model_file = PROJECT_DIR / "models" / "kmeans_rfm_pipeline.pkl"
         metric_file = PROJECT_DIR / "outputs" / "model_metrics.json"
 
         result = pd.read_csv(result_file)
@@ -26,17 +25,11 @@ class SavedArtifactsTests(unittest.TestCase):
         self.assertFalse(result[["kmeans_cluster", "kmeans_segment"]].isna().any().any())
         self.assertTrue(np.array_equal(predicted, result["kmeans_cluster"].to_numpy()))
 
-        legacy_bundle = joblib.load(legacy_model_file)
-        legacy_predicted = legacy_bundle["pipeline"].predict(
-            result[legacy_bundle["feature_columns"]]
-        )
-        self.assertTrue(np.array_equal(legacy_predicted, result["kmeans_cluster"].to_numpy()))
-
         for filename in [
             "Ketqua_KMeans.txt",
-            "KMeans_Clusters_2D_PCA.png",
-            "KMeans_Elbow_Silhouette.png",
-            "KMeans_Recency_vs_Monetary.png",
+            "charts/05_kmeans_pca.png",
+            "charts/01_k_evaluation.png",
+            "charts/06_recency_monetary.png",
             "rfm_kmeans_summary.xlsx",
         ]:
             self.assertTrue((PROJECT_DIR / "outputs" / filename).is_file())

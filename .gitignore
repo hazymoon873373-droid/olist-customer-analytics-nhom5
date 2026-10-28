@@ -16,3 +16,9 @@ Thumbs.db
 Tho_RFM_KMeans/data/*.csv
 !Tho_RFM_KMeans/data/.gitkeep
 !Tho_RFM_KMeans/data/olist_powerbi_orders_master.csv
+
+# Local environments and generated handover copies
+.venv-*/
+/processed/
+/handover/
+/storage/*.db

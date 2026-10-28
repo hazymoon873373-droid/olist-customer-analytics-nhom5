@@ -29,8 +29,9 @@ class PredictChurnTests(unittest.TestCase):
         self.assertEqual(int(result.score_decile.eq(1).sum()), 95)
 
     def test_legacy_bundle_is_supported_explicitly(self):
-        bundle = joblib.load(PROJECT / "models/random_forest_churn_pipeline.joblib")
-        data = pd.read_csv(PROJECT / "data/customer_churn_180d.csv").head(10)
+        # Verify the old bundle schema without keeping obsolete artifacts.
+        bundle = {"pipeline": self.bundle["pipeline"], "model_features": self.bundle["features"], "threshold": self.bundle["threshold"]}
+        data = self.test.head(10)
         result = predict_customers(bundle, data)
         np.testing.assert_allclose(result.churn_probability, bundle["pipeline"].predict_proba(data[bundle["model_features"]])[:, 1])
         self.assertTrue(result.model_version.eq("legacy_group_split").all())
