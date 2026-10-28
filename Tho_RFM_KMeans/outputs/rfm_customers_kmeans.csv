@@ -1,4 +1,4 @@
-﻿customer_unique_id,recency,first_order,last_order,frequency,monetary,r_score,m_score,f_score,rfm_score,cluster,segment
+﻿customer_unique_id,recency,first_order,last_order,frequency,monetary,r_score,m_score,f_score,rfm_score,kmeans_cluster,kmeans_segment
 0000366f3b9a7992bf8c76cfdf3221e2,112,2018-05-10 10:56:27,2018-05-10 10:56:27,1,129.9,4,3,1,413,0,"At-Risk High Spenders (Chi tiêu cao, lâu chưa mua)"
 0000b849f77a49e4a4ce2b2a4ca5be3f,115,2018-05-07 11:11:27,2018-05-07 11:11:27,1,18.9,3,1,1,311,1,"Hibernating Low-Value (Lâu chưa mua, giá trị thấp)"
 0000f46a3911fa3c0805444483337064,538,2017-03-10 21:05:03,2017-03-10 21:05:03,1,69.0,1,2,1,112,1,"Hibernating Low-Value (Lâu chưa mua, giá trị thấp)"

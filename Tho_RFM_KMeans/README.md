@@ -12,6 +12,11 @@ Phần này phân khúc khách hàng Olist bằng ba biến Recency, Frequency v
 - Dùng toàn bộ lịch sử đơn delivered đến hết ngày 30/08/2018.
 - Không dùng `valid_delay_kpi` để loại đơn khỏi bảng RFM.
 
+Đối soát với các bảng đơn hàng, khách hàng và sản phẩm sạch hiện có cho kết quả R/F/M
+khớp trên 93.358 khách. Model K-Means hiện tại được giữ nguyên. Bảng gán cụm dùng
+`kmeans_cluster` và `kmeans_segment`, tách khỏi phân khúc RFM theo luật. Cần Tâm xác nhận
+bảng sạch được đối soát là phiên bản nhóm chốt trước khi tích hợp chính thức.
+
 Sau khi lọc còn 93.358 khách hàng. Ba biến RFM được biến đổi `log1p`, chuẩn hóa bằng `StandardScaler` rồi mới đưa vào K-Means.
 
 ## Cài thư viện

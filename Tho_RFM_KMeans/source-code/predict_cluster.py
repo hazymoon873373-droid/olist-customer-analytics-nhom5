@@ -22,8 +22,8 @@ def predict_clusters(model_file, input_file, output_file):
     if missing_columns:
         raise ValueError(f"Thiếu cột đầu vào: {missing_columns}")
 
-    df["cluster"] = bundle["pipeline"].predict(df[feature_columns])
-    df["segment"] = df["cluster"].map(bundle["cluster_mapping"])
+    df["kmeans_cluster"] = bundle["pipeline"].predict(df[feature_columns])
+    df["kmeans_segment"] = df["kmeans_cluster"].map(bundle["cluster_mapping"])
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(

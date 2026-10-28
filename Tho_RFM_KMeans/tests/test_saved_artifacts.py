@@ -23,14 +23,14 @@ class SavedArtifactsTests(unittest.TestCase):
 
         self.assertEqual(len(result), 93358)
         self.assertTrue(result["customer_unique_id"].is_unique)
-        self.assertFalse(result[["cluster", "segment"]].isna().any().any())
-        self.assertTrue(np.array_equal(predicted, result["cluster"].to_numpy()))
+        self.assertFalse(result[["kmeans_cluster", "kmeans_segment"]].isna().any().any())
+        self.assertTrue(np.array_equal(predicted, result["kmeans_cluster"].to_numpy()))
 
         legacy_bundle = joblib.load(legacy_model_file)
         legacy_predicted = legacy_bundle["pipeline"].predict(
             result[legacy_bundle["feature_columns"]]
         )
-        self.assertTrue(np.array_equal(legacy_predicted, result["cluster"].to_numpy()))
+        self.assertTrue(np.array_equal(legacy_predicted, result["kmeans_cluster"].to_numpy()))
 
         for filename in [
             "Ketqua_KMeans.txt",

@@ -442,7 +442,7 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
         encoding="utf-8-sig",
         lineterminator="\n",
     )
-    rfm.to_csv(
+    rfm.rename(columns={"cluster": "kmeans_cluster", "segment": "kmeans_segment"}).to_csv(
         output_dir / "rfm_customers_kmeans.csv",
         index=False,
         encoding="utf-8-sig",
