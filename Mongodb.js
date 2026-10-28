@@ -3,16 +3,18 @@
 // =====================================================================
 const CONFIG = {
   dbName: "BigData",
+  indexRawGeolocation: false, // optional; geo_by_zip is the normal join source
   expectedCounts: {
     olist_orders_clean: 99441,
     olist_order_items_clean: 112650,
     geo_by_zip: 19015,
-    olist_customers_clean: 99441
+    olist_customers_clean: 99441,
+    product_category_name_translation_clean: 71
   },
   requiredCollections: [
     "olist_orders_clean", "olist_customers_clean", "olist_order_items_clean",
     "olist_order_payments_clean", "olist_order_reviews_clean", "olist_products_clean",
-    "olist_sellers_clean", "geo_by_zip"
+    "olist_sellers_clean", "geo_by_zip", "product_category_name_translation_clean"
   ]
 };
 
@@ -224,6 +226,16 @@ db.olist_order_payments_clean.createIndex({ order_id: 1, payment_sequential: 1 }
 db.olist_orders_clean.createIndex({ customer_id: 1 });
 db.olist_orders_clean.createIndex({ valid_delay_kpi: 1 });
 db.olist_customers_clean.createIndex({ customer_unique_id: 1 });
+
+db.product_category_name_translation_clean.createIndex({ product_category_name: 1 }, { unique: true });
+db.olist_order_reviews_clean.createIndex({ review_id: 1, order_id: 1 }, { unique: true });
+db.olist_orders_clean.createIndex({ order_status: 1 });
+db.olist_order_items_clean.createIndex({ product_id: 1 });
+db.olist_order_items_clean.createIndex({ seller_id: 1 });
+db.olist_order_reviews_clean.createIndex({ order_id: 1 });
+if (CONFIG.indexRawGeolocation && db.getCollectionNames().includes("olist_geolocation_clean")) {
+  db.olist_geolocation_clean.createIndex({ geolocation_zip_code_prefix: 1 });
+}
 
 print("\n=== HOÀN TẤT ĐỊNH KIỂU VÀ TẠO INDEX TRÊN DATABASE " + db.getName() + " ===");
 

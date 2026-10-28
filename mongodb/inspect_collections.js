@@ -1,3 +1,5 @@
+// Read-only optional inspection. Call inspectCollections(db.getSiblingDB("YOUR_DB")).
+function inspectCollections(db) {
 var targetColls = [
   "olist_customers_clean", "olist_orders_clean", "olist_order_items_clean", 
   "olist_order_payments_clean", "olist_order_reviews_clean", "olist_products_clean", 
@@ -20,7 +22,7 @@ targetColls.forEach(function(collName) {
       Object.keys(sample).forEach(function(key) {
         if (key !== "_id") {
           var val = sample[key];
-          var typeName = (val instanceof Date) ? "ISODate" : typeof val;
+          var typeName = (val instanceof Date) ? "ISODate" : (val === null ? "null" : typeof val);
           print("      * " + key.padEnd(30) + ": " + typeName);
         }
       });
@@ -28,10 +30,12 @@ targetColls.forEach(function(collName) {
   }
 });
 
-print(" 1. Số đơn đạt valid_delay_kpi = true (Kỳ vọng: 95097): " + db.olist_orders_clean.countDocuments({ valid_delay_kpi: true }));
-print(" 2. Số đơn delivered thiếu ngày giao  (Kỳ vọng: 8)    : " + db.olist_orders_clean.countDocuments({ delivered_missing_date: true }));
+print(" 1. Số đơn đạt valid_delay_kpi = true (Kỳ vọng: 95097): " + db.olist_orders_clean.countDocuments({ valid_delay_kpi: { $in: [true, "true", "True"] } }));
+print(" 2. Số đơn delivered thiếu ngày giao  (Kỳ vọng: 8)    : " + db.olist_orders_clean.countDocuments({ delivered_missing_date: { $in: [true, "true", "True"] } }));
 print(" 3. Review trước ngày mua hàng        (Kỳ vọng: 64)   : " + db.olist_order_reviews_clean.countDocuments({ review_time_status: "before_purchase_day" }));
 print(" 4. Review cùng ngày mốc giờ trước    (Kỳ vọng: 10)   : " + db.olist_order_reviews_clean.countDocuments({ review_time_status: "same_day_uncertain" }));
-print(" 5. Sản phẩm thiếu danh mục           (Kỳ vọng: 610)  : " + db.olist_products_clean.countDocuments({ category_missing: true }));
-print(" 6. Sản phẩm có trọng lượng bằng 0    (Kỳ vọng: 4)    : " + db.olist_products_clean.countDocuments({ weight_zero: true }));
-print(" 7. Mã ZIP mâu thuẫn bang             (Kỳ vọng: 8)    : " + db.geo_by_zip.countDocuments({ state_conflict: true }));
+print(" 5. Sản phẩm thiếu danh mục           (Kỳ vọng: 610)  : " + db.olist_products_clean.countDocuments({ category_missing: { $in: [true, "true", "True"] } }));
+print(" 6. Sản phẩm có trọng lượng bằng 0    (Kỳ vọng: 4)    : " + db.olist_products_clean.countDocuments({ weight_zero: { $in: [true, "true", "True"] } }));
+print(" 7. Mã ZIP mâu thuẫn bang             (Kỳ vọng: 8)    : " + db.geo_by_zip.countDocuments({ state_conflict: { $in: [true, "true", "True"] } }));
+
+}

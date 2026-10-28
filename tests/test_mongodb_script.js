@@ -5,7 +5,7 @@ const assert = require('assert');
 const source = fs.readFileSync(require('path').join(__dirname, '..', 'Mongodb.js'), 'utf8');
 const counts = {olist_orders_clean:99441, olist_order_items_clean:112650, geo_by_zip:19015,
   olist_customers_clean:99441, olist_order_payments_clean:103886,
-  olist_order_reviews_clean:99224, olist_products_clean:32951, olist_sellers_clean:3095};
+  olist_order_reviews_clean:99224, olist_products_clean:32951, olist_sellers_clean:3095, product_category_name_translation_clean:71};
 
 function run({empty=false, invalidZip=false, invalidConversion=false, customDb=false}={}) {
   const calls=[], writes=[];

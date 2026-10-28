@@ -11,3 +11,9 @@ kaggle.json
 node_modules/
 .DS_Store
 Thumbs.db
+
+# Local environments and generated handover copies
+.venv-*/
+/processed/
+/handover/
+/storage/*.db

@@ -33,7 +33,7 @@ class StrictOlistCleaner:
             status = 'PASS' if value == expected else 'FAIL'
         else:
             status = 'INFO' if value == expected else 'WARNING'
-            
+
         self.audit_rows.append({
             'category': category,
             'metric': metric,
@@ -105,14 +105,14 @@ class StrictOlistCleaner:
         self._add_audit('File Row Counts', 'geo_by_zip_row_count', len(geo_by_zip_clean), expected_unique_zips)
         self._add_audit('Primary Key Checks', 'geo_by_zip_pk_nulls', self._count_pk_nulls(geo_by_zip['geolocation_zip_code_prefix']), 0)
         self._add_audit('Primary Key Checks', 'geo_by_zip_pk_duplicates', int(geo_by_zip['geolocation_zip_code_prefix'].duplicated().sum()), 0)
-        
+
         self._add_audit('Business Rule Exceptions', 'geolocation_exact_duplicates', exact_duplicates_count, 261831)
         self._add_audit('Business Rule Exceptions', 'geo_zip_state_conflict', int(geo_by_zip['state_conflict'].sum()), 8)
-        
+
         # Cảnh báo địa lý (không làm rớt kiểm định bắt buộc)
         outlier_coord_cnt = int(geo_by_zip['is_outlier_coord'].sum())
         self._add_audit('Geographic Warnings', 'geo_zip_outlier_coord_warning', outlier_coord_cnt, 8, is_mandatory=False)
-        
+
         # Kiểm tra bắt buộc
         self._add_audit('Mandatory Geo Integrity', 'geo_zip_outlier_usable_conflict', outlier_and_usable_conflict, 0, is_mandatory=True)
 
@@ -124,8 +124,8 @@ class StrictOlistCleaner:
         raw_count = len(df)
 
         date_cols = [
-            'order_purchase_timestamp', 'order_approved_at', 
-            'order_delivered_carrier_date', 'order_delivered_customer_date', 
+            'order_purchase_timestamp', 'order_approved_at',
+            'order_delivered_carrier_date', 'order_delivered_customer_date',
             'order_estimated_delivery_date'
         ]
         for col in date_cols:
@@ -133,20 +133,20 @@ class StrictOlistCleaner:
 
         df['delivered_missing_date'] = (df['order_status'] == 'delivered') & df['order_delivered_customer_date'].isna()
         df['carrier_before_approval'] = (
-            df['order_delivered_carrier_date'].notna() & 
-            df['order_approved_at'].notna() & 
+            df['order_delivered_carrier_date'].notna() &
+            df['order_approved_at'].notna() &
             (df['order_delivered_carrier_date'] < df['order_approved_at'])
         )
         df['customer_before_carrier'] = (
-            df['order_delivered_customer_date'].notna() & 
-            df['order_delivered_carrier_date'].notna() & 
+            df['order_delivered_customer_date'].notna() &
+            df['order_delivered_carrier_date'].notna() &
             (df['order_delivered_customer_date'] < df['order_delivered_carrier_date'])
         )
         df['valid_delay_kpi'] = (
-            (df['order_status'] == 'delivered') & 
-            df['order_delivered_customer_date'].notna() & 
-            df['order_estimated_delivery_date'].notna() & 
-            (~df['carrier_before_approval']) & 
+            (df['order_status'] == 'delivered') &
+            df['order_delivered_customer_date'].notna() &
+            df['order_estimated_delivery_date'].notna() &
+            (~df['carrier_before_approval']) &
             (~df['customer_before_carrier'])
         )
 
@@ -405,7 +405,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Quy trình ETL làm sạch và kiểm định tự động bộ dữ liệu Olist.")
     parser.add_argument('--raw_dir', type=str, default='.', help='Đường dẫn thư mục chứa 9 tệp CSV thô.')
     parser.add_argument('--output_dir', type=str, default='./processed', help='Đường dẫn thư mục lưu kết quả làm sạch.')
-    
+
     args = parser.parse_args()
     cleaner = StrictOlistCleaner(raw_dir=args.raw_dir, output_dir=args.output_dir)
     cleaner.run_all()
