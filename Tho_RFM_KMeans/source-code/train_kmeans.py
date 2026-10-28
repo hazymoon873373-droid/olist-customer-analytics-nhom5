@@ -424,7 +424,10 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
         "inertia": float(selected_row["inertia"]),
         "train_time_seconds": train_time,
         "peak_memory_mb": peak_memory / (1024 * 1024),
-        "input_rule": "Chỉ lấy đơn delivered; Monetary là tổng total_products_value.",
+        "input_rule": (
+            "Đơn delivered đến hết 30/08/2018; Frequency đếm order_id khác nhau; "
+            "Monetary là tổng total_products_value; không lọc theo valid_delay_kpi."
+        ),
     }
 
     evaluation.to_csv(
