@@ -6,6 +6,8 @@
 - `source-code/train_kmeans.py`: đánh giá K, huấn luyện model và xuất kết quả.
 - `source-code/kmeans_rfm.py`: tên chạy tương thích với code cũ.
 - `source-code/predict_cluster.py`: dùng model đã lưu để gán cụm.
+- `source-code/verify_rfm.py`: đối soát nguồn mới với RFM của Tâm và model đã lưu, không train lại.
+- `source-code/export_summary.py`: tạo lại Excel từ kết quả và metric.
 
 ## Model
 
@@ -14,8 +16,10 @@
 
 ## Dữ liệu và kết quả
 
-- `data/olist_powerbi_orders_master.csv`: dữ liệu đầu vào khi đóng gói trong thư mục cuối kỳ.
+- `../Tho_Shared/data/`: master cập nhật, bảng sạch và bảng RFM của Tâm dùng để đối soát.
+- `data/olist_powerbi_orders_master.csv`: master cũ, chỉ giữ để đối chiếu lịch sử.
 - `outputs/rfm_rebuilt.csv`: bảng RFM tạo lại.
+- `outputs/rfm_source_check.json`: hash nguồn và kết quả đối soát R/F/M.
 - `outputs/rfm_customers_kmeans.csv`: bảng khách hàng đã gán cụm.
 - `outputs/k_evaluation.csv`: kết quả đánh giá K=2 đến K=10.
 - `outputs/cluster_profiles.csv`: hồ sơ bốn cụm.

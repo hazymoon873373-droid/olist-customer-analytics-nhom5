@@ -22,7 +22,9 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 
-from prepare_rfm import build_rfm, read_order_master
+from prepare_rfm import MASTER_FILE, build_rfm, read_order_master
+from export_summary import export_summary
+from load_orders import source_metadata
 
 
 matplotlib.use("Agg")
@@ -428,6 +430,7 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
             "Đơn delivered đến hết 30/08/2018; Frequency đếm order_id khác nhau; "
             "Monetary là tổng total_products_value; không lọc theo valid_delay_kpi."
         ),
+        "input_sources": source_metadata(master_path=order_master_file),
     }
 
     evaluation.to_csv(
@@ -436,7 +439,7 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
         encoding="utf-8-sig",
         lineterminator="\n",
     )
-    profiles.reset_index().to_csv(
+    profiles.reset_index().rename(columns={"cluster": "kmeans_cluster", "segment": "kmeans_segment"}).to_csv(
         output_dir / "cluster_profiles.csv",
         index=False,
         encoding="utf-8-sig",
@@ -479,6 +482,7 @@ def train_kmeans(order_master_file, output_dir, model_dir, k_min=2, k_max=10, fi
     shutil.copy2(k_chart, output_dir / "KMeans_Elbow_Silhouette.png")
     shutil.copy2(pca_chart, output_dir / "KMeans_Clusters_2D_PCA.png")
     shutil.copy2(rm_chart, output_dir / "KMeans_Recency_vs_Monetary.png")
+    export_summary(output_dir)
 
     print("\nKẾT QUẢ K-MEANS")
     print(f"Số khách hàng: {len(rfm):,}")
@@ -511,7 +515,7 @@ def main():
     parser.add_argument(
         "--input",
         type=Path,
-        default=project_dir / "data" / "olist_powerbi_orders_master.csv",
+        default=MASTER_FILE,
     )
     parser.add_argument("--output-dir", type=Path, default=project_dir / "outputs")
     parser.add_argument("--model-dir", type=Path, default=project_dir / "models")
