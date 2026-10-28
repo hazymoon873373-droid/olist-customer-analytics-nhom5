@@ -2,12 +2,21 @@
 
 > **Đọc trước:** Kết quả chia theo nhóm khách bên dưới là bản cũ, dùng master cũ có 8 ngày giao được điền và thời điểm snapshot chưa thống nhất. Bản hiện tại dùng master mới và bảng sạch, xem [báo cáo temporal v3](reports/bao_cao_temporal_v3.md). Mốc theo dõi cuối vẫn là giả định cần nhóm xác nhận.
 
-Chạy bản mới với bảng đơn sạch có cờ chất lượng:
+Chạy bản mới trên Windows, từ thư mục chứa dự án:
 
 ```powershell
+git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
+cd olist-customer-analytics-nhom5
+git switch codex/tho-machine-learning
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r Tho_Churn_Prediction/requirements.txt
 python -B Tho_Churn_Prediction/source-code/run_all.py
+python -B -m unittest discover -s Tho_Churn_Prediction/tests -v
 ```
+
+Nếu đã tải ZIP đúng nhánh hoặc đã clone, bỏ qua bước `git clone`, đi vào thư mục dự án rồi chạy
+các lệnh còn lại; nếu đã ở đúng nhánh thì bỏ qua `git switch`.
 
 Đầu vào mặc định nằm trong `Tho_Shared/data/`. Tham số `--master` và `--clean-orders` chọn nguồn khác;
 `--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định,
@@ -46,18 +55,9 @@ Nhãn được tạo như sau:
 
 Mỗi dòng được xác định bằng `sample_id`, gồm mã khách hàng và ngày snapshot. Feature chỉ dùng dữ liệu đã có trước snapshot.
 
-## Chạy trên máy khác
+## Chạy lại bản cũ để đối chiếu
 
-Yêu cầu Python 3.11 trở lên:
-
-```powershell
-git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
-cd olist-customer-analytics-nhom5
-git switch codex/tho-machine-learning
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r Tho_Churn_Prediction/requirements.txt
-```
+Yêu cầu Python 3.11 trở lên và các thư viện trong `requirements.txt`.
 
 File đầu vào đã nằm tại:
 
@@ -66,13 +66,6 @@ Tho_RFM_KMeans/data/olist_powerbi_orders_master.csv
 ```
 
 Chạy bản cũ riêng để đối chiếu (không dùng làm bản tích hợp):
-
-```powershell
-python -B Tho_Churn_Prediction/source-code/prepare_churn_data.py
-python -B Tho_Churn_Prediction/source-code/train_churn_model.py
-```
-
-Hoặc chạy riêng từng bước:
 
 ```powershell
 python -B Tho_Churn_Prediction/source-code/prepare_churn_data.py
@@ -125,7 +118,7 @@ Bảng dữ liệu gồm 5.920 mẫu customer-snapshot của 1.484 khách hàng:
 
 Trên train, weighted F1 đạt 0,9596 nhưng trên test còn 0,8993. Khoảng chênh này cho thấy model học tập train khá mạnh. Vì dữ liệu mất cân bằng, cần đọc balanced accuracy, macro F1 và kết quả từng lớp thay vì chỉ nhìn accuracy hoặc weighted average.
 
-## Dự đoán file mới
+## Dự đoán bằng model cũ
 
 File đầu vào cần có đủ 18 feature ghi trong báo cáo:
 
