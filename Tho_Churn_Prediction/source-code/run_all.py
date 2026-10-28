@@ -13,6 +13,7 @@ def main():
     parser = ArgumentParser(description="Chạy đánh giá churn theo thời gian")
     parser.add_argument("--clean-orders", type=Path)
     parser.add_argument("--master", type=Path)
+    parser.add_argument("--handover-dir", type=Path, help="Thu muc tho trong goi du lieu cua Thien")
     parser.add_argument("--observation-end", default="2018-08-31 00:00:00")
     args = parser.parse_args()
     command = ["--observation-end", args.observation_end]
@@ -20,6 +21,8 @@ def main():
         command += ["--clean-orders", str(args.clean_orders)]
     if args.master:
         command += ["--master", str(args.master)]
+    if args.handover_dir:
+        command += ["--handover-dir", str(args.handover_dir)]
     run_script(source_dir / "evaluate_temporal.py", command)
 
 

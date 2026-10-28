@@ -2,6 +2,8 @@
 
 > **Đọc trước:** Kết quả chia theo nhóm khách bên dưới là bản cũ, dùng master cũ có 8 ngày giao được điền và thời điểm snapshot chưa thống nhất. Bản hiện tại dùng master mới và bảng sạch, xem [báo cáo temporal v3](reports/bao_cao_temporal_v3.md). Mốc theo dõi cuối vẫn là giả định cần nhóm xác nhận.
 
+Temporal v3 có thêm Logistic Regression và baseline đa số trên cùng tập test; xem `outputs/temporal_v3_provisional/baseline_comparison.json`. Bảng test và BI có `score_decile` (1 = xác suất không mua lại cao nhất). Hai bảng xếp hạng theo tập khách riêng. Đây vẫn là kết quả thử nghiệm, không sử dụng trực tiếp để quyết định chăm sóc khách hàng.
+
 Chạy bản mới trên Windows, từ thư mục chứa dự án:
 
 ```powershell
@@ -23,6 +25,8 @@ các lệnh còn lại; nếu đã ở đúng nhánh thì bỏ qua `git switch`.
 cần nhóm xác nhận thời gian đủ dữ liệu. Kết quả mới trong `outputs/temporal_v3_provisional/`, gồm CSV
 snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI chỉ để thử tích hợp
 vì model dự đoán toàn bộ test là không mua lại.
+
+Với gói mới do Thiên export, chạy `python -B Tho_Churn_Prediction/source-code/run_all.py --handover-dir "duong-dan/handover/tho"`. Lệnh đọc `order_summary.csv` và ba bảng sạch từ cùng thư mục; snapshot IBGE lấy từ `Tho_Shared/data/ibge_states_raw.json`. Manifest đầu vào được ghi bằng SHA-256. Không dùng file nhãn 90 ngày cũ.
 
 Ngưỡng 180 ngày được tham khảo từ nghiên cứu của Zeinali và cộng sự (2026) trên dữ liệu Olist:
 [bài nghiên cứu](https://doi.org/10.1155/tswj/1946904). Bản dự đoán của nhóm dùng cửa sổ

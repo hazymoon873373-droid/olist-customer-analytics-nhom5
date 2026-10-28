@@ -50,7 +50,11 @@ def boolean_flags(data, columns):
 def load_orders(master_path=MASTER_FILE, clean_orders_path=CLEAN_ORDERS_FILE,
                 payments_path=PAYMENTS_FILE, ibge_path=IBGE_FILE,
                 customers_path=CUSTOMERS_FILE, items_path=ITEMS_FILE):
-    master = pd.read_csv(master_path, sep="\t", encoding="cp1252", usecols=MASTER_COLUMNS,
+    # Legacy BI master is tab/CP1252; Thien's handover is comma/UTF-8 BOM.
+    with Path(master_path).open("rb") as file:
+        header = file.readline()
+    sep, encoding = ("\t", "cp1252") if b"\t" in header else (",", "utf-8-sig")
+    master = pd.read_csv(master_path, sep=sep, encoding=encoding, usecols=MASTER_COLUMNS,
                          low_memory=False, na_values=["null"])
     clean = pd.read_csv(clean_orders_path, usecols=CLEAN_COLUMNS, low_memory=False, na_values=["null"])
     payments = pd.read_csv(payments_path, usecols=["order_id", "payment_sequential"], low_memory=False)
@@ -78,8 +82,9 @@ def load_orders(master_path=MASTER_FILE, clean_orders_path=CLEAN_ORDERS_FILE,
     clean_purchase = pd.to_datetime(joined.order_purchase_timestamp_clean, format="mixed", errors="coerce")
     if master_purchase.isna().any() or clean_purchase.isna().any():
         raise ValueError("Thiếu hoặc sai ngày mua")
-    if not master_purchase.equals(clean_purchase.dt.floor("min")):
-        raise ValueError("Ngày mua master không khớp bảng sạch ở độ chính xác phút")
+    matches = master_purchase.eq(clean_purchase) | master_purchase.eq(clean_purchase.dt.floor("min"))
+    if not matches.all():
+        raise ValueError("Ngày mua master không khớp bảng sạch (giây hoặc phút)")
 
     checked_customers = joined.merge(customers, left_on="customer_id_clean", right_on="customer_id",
                                     how="left", validate="many_to_one", suffixes=("_master", "_clean"), indicator="customer_join")

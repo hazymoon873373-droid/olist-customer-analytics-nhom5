@@ -5,10 +5,25 @@ import unittest
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "source-code"))
-from evaluate_temporal import build_snapshot, score_metrics
+from evaluate_temporal import build_snapshot, score_metrics, score_deciles, make_logistic_pipeline
 
 
 class TemporalLabelTests(unittest.TestCase):
+    def test_deciles_descend_and_preserve_index(self):
+        scores = pd.Series([0.1, 0.9, 0.9, 0.4], index=[8, 7, 6, 5])
+        result = score_deciles(scores)
+        self.assertEqual(result.loc[7], 1)
+        self.assertEqual(result.loc[6], 3)
+        self.assertEqual(result.loc[8], 8)
+        self.assertTrue(result.between(1, 10).all())
+        large = score_deciles(pd.Series(range(944), dtype=float) / 944)
+        self.assertEqual(int(large.eq(1).sum()), 95)
+
+    def test_logistic_preprocessing_is_inside_pipeline(self):
+        pipeline = make_logistic_pipeline()
+        self.assertEqual(pipeline.named_steps['model'].class_weight, 'balanced')
+        self.assertIn('preprocess', pipeline.named_steps)
+
     def setUp(self):
         self.t0 = pd.Timestamp("2018-02-01")
         self.end = pd.Timestamp("2018-07-31")
