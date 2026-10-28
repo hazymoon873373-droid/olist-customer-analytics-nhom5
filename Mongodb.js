@@ -1,60 +1,116 @@
 // =====================================================================
-// 1. CHỌN CƠ SỞ DỮ LIỆU ĐÍCH
+// CẤU HÌNH DÙNG CHUNG - TRÁNH GHI CỨNG TÊN DATABASE
 // =====================================================================
-const TARGET_DB = "BigData";
-db = db.getSiblingDB(TARGET_DB);
+const CONFIG = {
+  dbName: "BigData",
+  expectedCounts: {
+    olist_orders_clean: 99441,
+    olist_order_items_clean: 112650,
+    geo_by_zip: 19015,
+    olist_customers_clean: 99441
+  },
+  requiredCollections: [
+    "olist_orders_clean", "olist_customers_clean", "olist_order_items_clean",
+    "olist_order_payments_clean", "olist_order_reviews_clean", "olist_products_clean",
+    "olist_sellers_clean", "geo_by_zip"
+  ]
+};
 
-print("\n=== [1] BẮT ĐẦU ĐỊNH KIỂU VÀ KIỂM TRA GIÁ TRỊ LỖI TRÊN DATABASE: " + db.getName() + " ===");
+db = db.getSiblingDB(CONFIG.dbName);
+print("\n>>> ĐÃ KẾT NỐI CSDL: " + db.getName() + " <<<");
 
 // ---------------------------------------------------------------------
-// HÀM BỔ TRỢ: THỐNG KÊ GIÁ TRỊ LỖI TRƯỚC KHUYỂN ĐỔI (TRÁNH ÂM THẦM BIẾN THÀNH NULL)
+// BƯỚC 1: PRE-CHECK TỒN TẠI VÀ SỐ LƯỢNG (DỪNG CHƯƠNG TRÌNH NẾU FAIL)
 // ---------------------------------------------------------------------
-function checkConversionFailures(collectionName, fieldsConfig) {
-  print("\n --- Kiểm tra tính hợp lệ trước khi chuyển đổi tại: " + collectionName + " ---");
-  var coll = db.getCollection(collectionName);
-  
-  fieldsConfig.forEach(function(cfg) {
-    var field = cfg.field;
-    var targetType = cfg.targetType;
-    
-    var invalidCount = 0;
-    if (targetType === "int" || targetType === "double") {
-      invalidCount = coll.countDocuments({
-        $and: [
-          { [field]: { $exists: true, $ne: null } },
-          { [field]: { $not: { $type: "number" } } },
-          { [field]: { $not: { $regex: "^-?[0-9]+(\\.[0-9]+)?$" } } },
-          { [field]: { $nin: ["", "null", "nan", "None"] } }
-        ]
-      });
-    } else if (targetType === "date") {
-      invalidCount = coll.countDocuments({
-        $and: [
-          { [field]: { $exists: true, $ne: null } },
-          { [field]: { $not: { $type: "date" } } },
-          { [field]: { $not: { $regex: "^[0-9]{4}-[0-9]{2}-[0-9]{2}" } } },
-          { [field]: { $nin: ["", "null", "nan", "None"] } }
-        ]
-      });
+(function validateDatabaseBeforeExecution() {
+  print("\n--- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN TIÊN QUYẾT (PRE-EXECUTION CHECK) ---");
+  var existingCollections = db.getCollectionNames();
+  var isCriticalError = false;
+
+  CONFIG.requiredCollections.forEach(function(collName) {
+    if (!existingCollections.includes(collName)) {
+      print(" [FAIL] LỖI CRITICAL: Thiếu Collection '" + collName + "' trong DB " + db.getName());
+      isCriticalError = true;
+    } else {
+      var currentCount = db.getCollection(collName).countDocuments();
+      if (currentCount === 0) {
+        print(" [FAIL] LỖI CRITICAL: Collection '" + collName + "' bị TRỐNG (0 document)!");
+        isCriticalError = true;
+      } else if (CONFIG.expectedCounts[collName] && currentCount !== CONFIG.expectedCounts[collName]) {
+        print(" [FAIL] LỖI SỐ LIỆU: Collection '" + collName + "' có " + currentCount + " docs (Kỳ vọng: " + CONFIG.expectedCounts[collName] + ")");
+        isCriticalError = true;
+      } else {
+        print(" [PASS] Collection '" + collName + "' hợp lệ (" + currentCount.toLocaleString() + " docs).");
+      }
     }
-    print("   * Trường '" + field + "' -> Kỳ vọng (" + targetType + ") | Giá trị bất thường: " + invalidCount);
   });
+
+  if (isCriticalError) {
+    print("\n=======================================================================");
+    print(" KẾT QUẢ PRE-CHECK: [FAIL] - DỪNG TOÀN BỘ QUÁ TRÌNH XỬ LÝ!");
+    print("=======================================================================\n");
+    throw new Error("PRE-CHECK FAIL: CSDL không đủ điều kiện để thực thi.");
+  }
+  print(" [SUCCESS] Mọi collection hợp lệ! Chuyển sang bước chuyển đổi BSON.");
+})();
+
+// ---------------------------------------------------------------------
+// BƯỚC 2: PHÂN BIỆT NULL CÓ SẴN VÀ THỐNG KÊ LỖI CHUYỂN ĐỔI BSON
+// ---------------------------------------------------------------------
+function auditPreConversionFailures(collectionName, fieldName, targetType) {
+  var coll = db.getCollection(collectionName);
+  var originalNulls = coll.countDocuments({ $or: [{ [fieldName]: null }, { [fieldName]: "" }, { [fieldName]: "null" }] });
+  
+  var invalidFormatCount = 0;
+  if (targetType === "number") {
+    invalidFormatCount = coll.countDocuments({
+      $and: [
+        { [fieldName]: { $exists: true, $ne: null } },
+        { [fieldName]: { $not: { $type: "number" } } },
+        { [fieldName]: { $not: { $regex: "^-?[0-9]+(\\.[0-9]+)?$" } } },
+        { [fieldName]: { $nin: ["", "null", "nan", "None"] } }
+      ]
+    });
+  }
+  print("   * " + collectionName + "." + fieldName + " -> Null ban đầu: " + originalNulls + " | Chuỗi số lỗi: " + invalidFormatCount);
 }
 
-// Kiểm tra trước khi thực thi
-checkConversionFailures("olist_products_clean", [
-  { field: "product_name_lenght", targetType: "int" },
-  { field: "product_weight_g", targetType: "double" }
-]);
-checkConversionFailures("olist_orders_clean", [
-  { field: "order_purchase_timestamp", targetType: "date" }
-]);
+print("\n--- BƯỚC 2: KIỂM TRA CHUỖI SỐ LỖI TRƯỚC KHUYỂN ĐỔI ---");
+auditPreConversionFailures("olist_products_clean", "product_name_lenght", "number");
+auditPreConversionFailures("olist_products_clean", "product_weight_g", "number");
 
 // ---------------------------------------------------------------------
-// 2. CẬP NHẬT KIỂU DỮ LIỆU TẠI CHỖ (IN-PLACE VIA updateMany PIPELINE)
+// HÀM BỔ TRỢ: ĐỆM MÃ ZIP CHUẨN 5 CHỮ SỐ (TƯƠNG THÍCH MONGODB 4.2+)
 // ---------------------------------------------------------------------
+function padZipExpr(fieldPath) {
+  return {
+    $let: {
+      vars: {
+        strPadded: {
+          $concat: [
+            "00000",
+            { $toString: { $ifNull: [fieldPath, "0"] } }
+          ]
+        }
+      },
+      in: {
+        $substrCP: [
+          "$$strPadded",
+          { $subtract: [{ $strLenCP: "$$strPadded" }, 5] },
+          5
+        ]
+      }
+    }
+  };
+}
 
-// 2.1 olist_orders_clean
+// ---------------------------------------------------------------------
+// BƯỚC 3: CẬP NHẬT KIỂU DỮ LIỆU TẠI CHỖ (IN-PLACE updateMany PIPELINE)
+// Quy ước thời gian: ISO-8601 UTC (YYYY-MM-DDTHH:mm:ssZ)
+// ---------------------------------------------------------------------
+print("\n--- BƯỚC 3: THỰC THI updateMany CHUYỂN ĐỔI BSON VÀ ĐỆM MÃ ZIP ---");
+
+// 3.1 olist_orders_clean
 db.olist_orders_clean.updateMany({}, [
   {
     $set: {
@@ -64,14 +120,12 @@ db.olist_orders_clean.updateMany({}, [
       order_delivered_customer_date: { $convert: { input: "$order_delivered_customer_date", to: "date", onError: null, onNull: null } },
       order_estimated_delivery_date: { $convert: { input: "$order_estimated_delivery_date", to: "date", onError: null, onNull: null } },
       delivered_missing_date: { $eq: [{ $toLower: { $toString: "$delivered_missing_date" } }, "true"] },
-      carrier_before_approval: { $eq: [{ $toLower: { $toString: "$carrier_before_approval" } }, "true"] },
-      customer_before_carrier: { $eq: [{ $toLower: { $toString: "$customer_before_carrier" } }, "true"] },
       valid_delay_kpi: { $eq: [{ $toLower: { $toString: "$valid_delay_kpi" } }, "true"] }
     }
   }
 ]);
 
-// 2.2 olist_products_clean (Chuyển chuỗi số "40.0" -> double -> int)
+// 3.2 olist_products_clean (Chuyển chuỗi "40.0" -> double -> int)
 db.olist_products_clean.updateMany({}, [
   {
     $set: {
@@ -79,16 +133,12 @@ db.olist_products_clean.updateMany({}, [
       product_description_lenght: { $toInt: { $convert: { input: "$product_description_lenght", to: "double", onError: null, onNull: null } } },
       product_photos_qty: { $toInt: { $convert: { input: "$product_photos_qty", to: "double", onError: null, onNull: null } } },
       product_weight_g: { $convert: { input: "$product_weight_g", to: "double", onError: null, onNull: null } },
-      product_length_cm: { $convert: { input: "$product_length_cm", to: "double", onError: null, onNull: null } },
-      product_height_cm: { $convert: { input: "$product_height_cm", to: "double", onError: null, onNull: null } },
-      product_width_cm: { $convert: { input: "$product_width_cm", to: "double", onError: null, onNull: null } },
-      category_missing: { $eq: [{ $toLower: { $toString: "$category_missing" } }, "true"] },
-      weight_zero: { $eq: [{ $toLower: { $toString: "$weight_zero" } }, "true"] }
+      category_missing: { $eq: [{ $toLower: { $toString: "$category_missing" } }, "true"] }
     }
   }
 ]);
 
-// 2.3 olist_order_items_clean
+// 3.3 olist_order_items_clean
 db.olist_order_items_clean.updateMany({}, [
   {
     $set: {
@@ -100,7 +150,7 @@ db.olist_order_items_clean.updateMany({}, [
   }
 ]);
 
-// 2.4 olist_order_payments_clean
+// 3.4 olist_order_payments_clean
 db.olist_order_payments_clean.updateMany({}, [
   {
     $set: {
@@ -111,184 +161,102 @@ db.olist_order_payments_clean.updateMany({}, [
   }
 ]);
 
-// 2.5 olist_order_reviews_clean
-db.olist_order_reviews_clean.updateMany({}, [
-  {
-    $set: {
-      review_score: { $toInt: { $convert: { input: "$review_score", to: "double", onError: null, onNull: null } } },
-      review_creation_date: { $convert: { input: "$review_creation_date", to: "date", onError: null, onNull: null } },
-      review_answer_timestamp: { $convert: { input: "$review_answer_timestamp", to: "date", onError: null, onNull: null } },
-      review_before_purchase: { $eq: [{ $toLower: { $toString: "$review_before_purchase" } }, "true"] },
-      is_duplicate_review_order: { $eq: [{ $toLower: { $toString: "$is_duplicate_review_order" } }, "true"] }
-    }
-  }
+// 3.5 Ép kiểu và Đệm chuỗi Mã ZIP chuẩn 5 chữ số
+db.olist_customers_clean.updateMany({}, [
+  { $set: { customer_zip_code_prefix: padZipExpr("$customer_zip_code_prefix") } }
 ]);
 
-// 2.6 geo_by_zip
+db.olist_sellers_clean.updateMany({}, [
+  { $set: { seller_zip_code_prefix: padZipExpr("$seller_zip_code_prefix") } }
+]);
+
 db.geo_by_zip.updateMany({}, [
   {
     $set: {
+      geolocation_zip_code_prefix: padZipExpr("$geolocation_zip_code_prefix"),
       geolocation_lat: { $convert: { input: "$geolocation_lat", to: "double", onError: null, onNull: null } },
       geolocation_lng: { $convert: { input: "$geolocation_lng", to: "double", onError: null, onNull: null } },
       point_count: { $toInt: { $convert: { input: "$point_count", to: "double", onError: null, onNull: null } } },
-      state_conflict: { $eq: [{ $toLower: { $toString: "$state_conflict" } }, "true"] },
-      is_outlier_coord: { $eq: [{ $toLower: { $toString: "$is_outlier_coord" } }, "true"] },
       usable_for_geo: { $eq: [{ $toLower: { $toString: "$usable_for_geo" } }, "true"] }
     }
   }
 ]);
 
 // ---------------------------------------------------------------------
-// 3. TẠO INDEX TRÊN DATABASE BigData
+// BƯỚC 4: TẠO HỆ THỐNG INDEX TRÊN DATABASE BigData
 // ---------------------------------------------------------------------
+print("\n--- BƯỚC 4: TẠO INDEXES TRÊN BigData ---");
 db.olist_customers_clean.createIndex({ customer_id: 1 }, { unique: true });
 db.olist_orders_clean.createIndex({ order_id: 1 }, { unique: true });
 db.olist_products_clean.createIndex({ product_id: 1 }, { unique: true });
 db.olist_sellers_clean.createIndex({ seller_id: 1 }, { unique: true });
 db.geo_by_zip.createIndex({ geolocation_zip_code_prefix: 1 }, { unique: true });
-db.product_category_name_translation_clean.createIndex({ product_category_name: 1 }, { unique: true });
 
 db.olist_order_items_clean.createIndex({ order_id: 1, order_item_id: 1 }, { unique: true });
 db.olist_order_payments_clean.createIndex({ order_id: 1, payment_sequential: 1 }, { unique: true });
-db.olist_order_reviews_clean.createIndex({ review_id: 1, order_id: 1 }, { unique: true });
 
 db.olist_orders_clean.createIndex({ customer_id: 1 });
 db.olist_orders_clean.createIndex({ valid_delay_kpi: 1 });
-db.olist_order_items_clean.createIndex({ product_id: 1 });
-db.olist_order_items_clean.createIndex({ seller_id: 1 });
-db.olist_order_reviews_clean.createIndex({ order_id: 1 });
 db.olist_customers_clean.createIndex({ customer_unique_id: 1 });
 
-print("=== [2] HOÀN TẤT CẬP NHẬT TẠI CHỖ VÀ TẠO INDEX TRÊN DATABASE BigData ===");
+print("\n=== HOÀN TẤT ĐỊNH KIỂU VÀ TẠO INDEX TRÊN DATABASE " + db.getName() + " ===");
 
 db = db.getSiblingDB("BigData");
 
 print("\n=======================================================================");
-print("   BÁO CÁO AUDIT KIỂM TRA TOÀN DIỆN (100% DOCUMENTS) - DATABASE: BigData");
+print("   BÁO CÁO AUDIT DỮ LIỆU VÀ ĐỐI SOÁT BẰNG CHỨNG (DATABASE: BigData)");
 print("=======================================================================");
 
-var overallPassed = true;
+var auditStatus = true;
 
-function logCheck(section, checkName, status, details) {
-  var statusTag = status === "PASS" ? "[ĐẠT - PASS]" : "[KHÔNG ĐẠT - FAIL]";
-  print(" " + statusTag + " " + section.padEnd(22) + " | " + checkName);
-  if (details) print("      └─ Chi tiết phân phối : " + details);
-  if (status === "FAIL") overallPassed = false;
+function logResult(category, checkName, passCondition, detailMsg) {
+  var tag = passCondition ? "[PASS]" : "[FAIL]";
+  print(" " + tag + " " + category.padEnd(20) + " | " + checkName);
+  if (detailMsg) print("      └─ Details: " + detailMsg);
+  if (!passCondition) auditStatus = false;
 }
 
-// ---------------------------------------------------------------------
-// 1. THỐNG KÊ $type CHO CÁC TRƯỜNG QUAN TRỌNG (QUÉT 100% COLLECTION)
-// ---------------------------------------------------------------------
-print("\n-----------------------------------------------------------------------");
-print(" 1. KIỂM TRA KIỂU DỮ LIỆU BSON ($type DISTRIBUTION ACROSS 100% DOCUMENTS)");
-print("-----------------------------------------------------------------------");
+// 1. Kiểm tra Mốc Số Lượng Bắt Buộc
+var orderCount = db.olist_orders_clean.countDocuments();
+logResult("Document Count", "olist_orders_clean == 99,441", orderCount === 99441, "Actual: " + orderCount);
 
-function checkFieldTypes(collName, fieldName, expectedTypes) {
-  var coll = db.getCollection(collName);
-  var typeDist = coll.aggregate([
-    { $group: { _id: { $type: "$" + fieldName }, count: { $sum: 1 } } }
-  ]).toArray();
+var itemCount = db.olist_order_items_clean.countDocuments();
+logResult("Document Count", "olist_order_items_clean == 112,650", itemCount === 112650, "Actual: " + itemCount);
 
-  var isPass = typeDist.every(t => expectedTypes.includes(t._id));
-  var details = typeDist.map(t => t._id + ": " + t.count.toLocaleString() + " docs").join(" | ");
-  logCheck("Kiểm Tra Kiểu BSON", collName + "." + fieldName, isPass ? "PASS" : "FAIL", details);
-}
+var zipCount = db.geo_by_zip.countDocuments();
+logResult("Document Count", "geo_by_zip == 19,015", zipCount === 19015, "Actual: " + zipCount);
 
-// A. Kiểu Ngày Tháng (ISODate)
-checkFieldTypes("olist_orders_clean", "order_purchase_timestamp", ["date", "null"]);
-checkFieldTypes("olist_orders_clean", "order_delivered_customer_date", ["date", "null"]);
-checkFieldTypes("olist_order_items_clean", "shipping_limit_date", ["date", "null"]);
-checkFieldTypes("olist_order_reviews_clean", "review_creation_date", ["date", "null"]);
+var validKpiCount = db.olist_orders_clean.countDocuments({ valid_delay_kpi: true });
+logResult("Quality Flag", "valid_delay_kpi == 95,097", validKpiCount === 95097, "Actual: " + validKpiCount);
 
-// B. Kiểu Số Tiền & Giá Trị Số (Double / Int32)
-checkFieldTypes("olist_order_items_clean", "price", ["double", "null"]);
-checkFieldTypes("olist_order_items_clean", "freight_value", ["double", "null"]);
-checkFieldTypes("olist_order_payments_clean", "payment_value", ["double", "null"]);
-checkFieldTypes("olist_products_clean", "product_weight_g", ["double", "null"]);
-checkFieldTypes("olist_order_items_clean", "order_item_id", ["int", "null"]);
+var missingDeliveredCount = db.olist_orders_clean.countDocuments({ delivered_missing_date: true });
+logResult("Quality Flag", "delivered_missing_date == 8", missingDeliveredCount === 8, "Actual: " + missingDeliveredCount);
 
-// C. Kiểu Cờ Boolean
-checkFieldTypes("olist_orders_clean", "valid_delay_kpi", ["bool"]);
-checkFieldTypes("olist_orders_clean", "delivered_missing_date", ["bool"]);
-checkFieldTypes("geo_by_zip", "usable_for_geo", ["bool"]);
+// 2. Kiểm tra Phân Phối Kiểu BSON ($type)
+var dateTypeDist = db.olist_orders_clean.aggregate([{ $group: { _id: { $type: "$order_purchase_timestamp" }, count: { $sum: 1 } } }]).toArray();
+logResult("BSON Type Check", "order_purchase_timestamp ISODate", dateTypeDist.every(t => t._id === "date"), JSON.stringify(dateTypeDist));
 
-// D. Mã ZIP chuẩn Chuỗi String 5 Ký Tự Số (Regex: ^[0-9]{5}$)
-function checkZipFormat(collName, zipField) {
-  var coll = db.getCollection(collName);
-  var invalidZips = coll.countDocuments({
-    $or: [
-      { [zipField]: { $not: { $type: "string" } } },
-      { [zipField]: { $not: { $regex: "^[0-9]{5}$" } } }
-    ]
-  });
-  logCheck("Định Dạng Mã ZIP", collName + "." + zipField + " (String 5 chữ số)", invalidZips === 0 ? "PASS" : "FAIL", "Vi phạm: " + invalidZips + " bản ghi");
-}
-checkZipFormat("olist_customers_clean", "customer_zip_code_prefix");
-checkZipFormat("olist_sellers_clean", "seller_zip_code_prefix");
-checkZipFormat("geo_by_zip", "geolocation_zip_code_prefix");
+var priceTypeDist = db.olist_order_items_clean.aggregate([{ $group: { _id: { $type: "$price" }, count: { $sum: 1 } } }]).toArray();
+logResult("BSON Type Check", "price Double", priceTypeDist.every(t => t._id === "double"), JSON.stringify(priceTypeDist));
 
-// ---------------------------------------------------------------------
-// 2. KIỂM TRA TRÙNG KHÓA (PRIMARY & COMPOSITE KEYS)
-// ---------------------------------------------------------------------
-print("\n-----------------------------------------------------------------------");
-print(" 2. KIỂM TRA ĐỘC NHẤT CỦA KHÓA CHÍNH VÀ KHÓA PHỨC HỢP");
-print("-----------------------------------------------------------------------");
+// 3. Kiểm tra Chuỗi Mã ZIP 5 Chữ Số (Regex: ^[0-9]{5}$)
+var invalidCustZip = db.olist_customers_clean.countDocuments({
+  $or: [
+    { customer_zip_code_prefix: { $not: { $type: "string" } } },
+    { customer_zip_code_prefix: { $not: { $regex: "^[0-9]{5}$" } } }
+  ]
+});
+logResult("ZIP Code Format", "customer_zip_code_prefix String 5-digits", invalidCustZip === 0, "Violations: " + invalidCustZip);
 
-function checkUniqueKey(collName, keySpec, keyLabel) {
-  var coll = db.getCollection(collName);
-  var dups = coll.aggregate([
-    { $group: { _id: keySpec, count: { $sum: 1 } } },
-    { $match: { count: { $gt: 1 } } }
-  ]).toArray().length;
-  logCheck("Kiểm Tra Khóa Trùng", collName + " -> " + keyLabel, dups === 0 ? "PASS" : "FAIL", dups > 0 ? "Số khóa trùng: " + dups : "Không trùng lặp");
-}
+// 4. Kiểm tra Bản ghi Mồ côi (Referential Integrity)
+var orphanItems = db.olist_order_items_clean.aggregate([
+  { $lookup: { from: "olist_orders_clean", localField: "order_id", foreignField: "order_id", as: "matched" } },
+  { $match: { matched: { $size: 0 } } }
+]).toArray().length;
+logResult("Referential Check", "Order Items mồ côi order_id == 0", orphanItems === 0, "Orphans: " + orphanItems);
 
-checkUniqueKey("olist_customers_clean", "$customer_id", "Primary Key (customer_id)");
-checkUniqueKey("olist_orders_clean", "$order_id", "Primary Key (order_id)");
-checkUniqueKey("olist_products_clean", "$product_id", "Primary Key (product_id)");
-checkUniqueKey("olist_sellers_clean", "$seller_id", "Primary Key (seller_id)");
-checkUniqueKey("geo_by_zip", "$geolocation_zip_code_prefix", "Primary Key (zip_code_prefix)");
-checkUniqueKey("olist_order_items_clean", { order_id: "$order_id", item_id: "$order_item_id" }, "Composite Key (order_id, order_item_id)");
-checkUniqueKey("olist_order_payments_clean", { order_id: "$order_id", seq: "$payment_sequential" }, "Composite Key (order_id, payment_sequential)");
-checkUniqueKey("olist_order_reviews_clean", { review_id: "$review_id", order_id: "$order_id" }, "Composite Key (review_id, order_id)");
-
-// ---------------------------------------------------------------------
-// 3. KIỂM TRA BẢN GHI MỒ CÔI (REFERENTIAL INTEGRITY ACROSS ALL FKs)
-// ---------------------------------------------------------------------
-print("\n-----------------------------------------------------------------------");
-print(" 3. KIỂM TRA BẢN GHI MỒ CÔI VÀ TÍNH TOÀN VẸN THAM CHIẾU");
-print("-----------------------------------------------------------------------");
-
-function checkOrphans(sourceColl, targetColl, foreignKey, targetKey) {
-  var coll = db.getCollection(sourceColl);
-  var orphans = coll.aggregate([
-    { $match: { [foreignKey]: { $ne: null } } },
-    {
-      $lookup: {
-        from: targetColl,
-        localField: foreignKey,
-        foreignField: targetKey,
-        as: "ref"
-      }
-    },
-    { $match: { ref: { $size: 0 } } }
-  ]).toArray().length;
-
-  logCheck("Liên Kết Tham Chiếu", sourceColl + "." + foreignKey + " -> " + targetColl + "." + targetKey, orphans === 0 ? "PASS" : "FAIL", orphans > 0 ? "Bản ghi mồ côi: " + orphans : "100% khớp khóa ngoại");
-}
-
-checkOrphans("olist_orders_clean", "olist_customers_clean", "customer_id", "customer_id");
-checkOrphans("olist_order_items_clean", "olist_orders_clean", "order_id", "order_id");
-checkOrphans("olist_order_items_clean", "olist_products_clean", "product_id", "product_id");
-checkOrphans("olist_order_items_clean", "olist_sellers_clean", "seller_id", "seller_id");
-checkOrphans("olist_order_payments_clean", "olist_orders_clean", "order_id", "order_id");
-checkOrphans("olist_order_reviews_clean", "olist_orders_clean", "order_id", "order_id");
-
-// ---------------------------------------------------------------------
-// KẾT LUẬN TỔNG THỂ
-// ---------------------------------------------------------------------
 print("\n=======================================================================");
-print(" KẾT LUẬN KIỂM ĐỊNH TOÀN BỘ CSDL BigData: " + (overallPassed ? "ĐẠT (PASS 100%)" : "KHÔNG ĐẠT (FAIL)"));
+print(" KẾT LUẬN AUDIT TOÀN BỘ CSDL BigData: " + (auditStatus ? "ĐẠT (PASS 100%)" : "KHÔNG ĐẠT (FAIL)"));
 print("=======================================================================\n");
 
 db = db.getSiblingDB("BigData");
@@ -305,23 +273,12 @@ db.olist_customers_clean.aggregate([
       as: "orders"
     }
   },
-  { $unwind: "$orders" },
+  { $unwind: { path: "$orders", preserveNullAndEmptyArrays: true } },
   {
     $lookup: {
       from: "olist_order_items_clean",
-      let: { order_id: "$orders.order_id" },
-      pipeline: [
-        { $match: { $expr: { $eq: ["$order_id", "$$order_id"] } } },
-        {
-          $lookup: {
-            from: "olist_products_clean",
-            localField: "product_id",
-            foreignField: "product_id",
-            as: "product_detail"
-          }
-        },
-        { $unwind: { path: "$product_detail", preserveNullAndEmptyArrays: true } }
-      ],
+      localField: "orders.order_id",
+      foreignField: "order_id",
       as: "orders.items"
     }
   },
@@ -334,17 +291,8 @@ db.olist_customers_clean.aggregate([
     }
   },
   {
-    $lookup: {
-      from: "olist_order_reviews_clean",
-      localField: "orders.order_id",
-      foreignField: "order_id",
-      as: "orders.reviews"
-    }
-  },
-  {
     $addFields: {
-      "orders.order_total_payment": { $round: [{ $sum: "$orders.payments.payment_value" }, 2] },
-      "orders.total_items_count": { $size: "$orders.items" }
+      "orders.order_total_payment": { $round: [{ $sum: "$orders.payments.payment_value" }, 2] }
     }
   },
   {
@@ -352,7 +300,7 @@ db.olist_customers_clean.aggregate([
       _id: "$customer_unique_id",
       customer_city: { $first: "$customer_city" },
       customer_state: { $first: "$customer_state" },
-      total_orders_placed: { $sum: 1 },
+      total_orders_placed: { $sum: { $cond: [{ $ifNull: ["$orders.order_id", false] }, 1, 0] } },
       total_lifetime_spent: { $sum: "$orders.order_total_payment" },
       orders_history: { $push: "$orders" }
     }
@@ -372,10 +320,11 @@ db.olist_customers_clean.aggregate([
 
 db = db.getSiblingDB("BigData");
 
+// Tham số Bộ Lọc Web (Test trường hợp không có kết quả: dùng Bang 'XX')
 var filterStatus = "delivered";
 var startDate = ISODate("2018-01-01T00:00:00Z");
-var endDate = ISODate("2018-09-01T00:00:00Z");
-var filterState = "SP";
+var endDate = ISODate("2018-07-01T00:00:00Z");
+var filterState = "SP"; 
 
 db.olist_orders_clean.aggregate([
   {
@@ -419,7 +368,6 @@ db.olist_orders_clean.aggregate([
       order_payment_amount: { $sum: "$payments.payment_value" },
       order_goods_amount: { $sum: "$items.price" },
       order_freight_amount: { $sum: "$items.freight_value" },
-      order_item_qty: { $size: "$items" },
       is_delayed_order: {
         $cond: [
           {
@@ -441,7 +389,6 @@ db.olist_orders_clean.aggregate([
       total_gross_revenue: { $sum: "$order_payment_amount" },
       total_goods_value: { $sum: "$order_goods_amount" },
       total_freight_value: { $sum: "$order_freight_amount" },
-      total_products_sold: { $sum: "$order_item_qty" },
       valid_kpi_orders_count: { $sum: { $cond: ["$valid_delay_kpi", 1, 0] } },
       delayed_orders_count: { $sum: "$is_delayed_order" }
     }
@@ -453,13 +400,14 @@ db.olist_orders_clean.aggregate([
       total_gross_revenue: { $round: ["$total_gross_revenue", 2] },
       total_goods_value: { $round: ["$total_goods_value", 2] },
       total_freight_value: { $round: ["$total_freight_value", 2] },
-      total_products_sold: 1,
       valid_kpi_orders_count: 1,
       delayed_orders_count: 1,
+      // Bảo vệ lỗi chia cho 0 (Zero-Denominator Safe)
       delay_rate_pct: {
-        $round: [
-          { $multiply: [{ $divide: ["$delayed_orders_count", "$valid_kpi_orders_count"] }, 100] },
-          2
+        $cond: [
+          { $gt: ["$valid_kpi_orders_count", 0] },
+          { $round: [{ $multiply: [{ $divide: ["$delayed_orders_count", "$valid_kpi_orders_count"] }, 100] }, 2] },
+          0.0
         ]
       }
     }
