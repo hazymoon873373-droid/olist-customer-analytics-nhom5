@@ -17,8 +17,8 @@ Các biến có phân phối lệch được biến đổi `log1p`. Giá trị t
 
 Đối chiếu bảng đơn sạch hiện có: 1.381 đơn không đạt cờ `valid_delay_kpi`, gồm 8 đơn thiếu ngày giao.
 Nhóm vẫn giữ các đơn này, nhưng để thiếu hai biến thời gian giao hàng và điền trung vị trong Pipeline.
-Ngày giao và ngày dự kiến lấy từ bảng sạch, không lấy ngày đã điền của master cũ.
-Đây là kết quả tạm thời, chờ nhóm xác nhận phiên bản dữ liệu sạch và master cuối cùng.
+Ngày giao và ngày dự kiến lấy từ bảng sạch, không lấy ngày đã điền của master cũ. Bản này dùng
+master nhóm cập nhật ngày 28/10/2026 cùng bảng sạch; phiên bản và hash được lưu trong model_metrics.json.
 
 ## Mô hình
 
@@ -29,13 +29,13 @@ Mô hình sử dụng 200 cây, `max_samples = 4096`, `contamination = 0.01` và
 ## Kết quả
 
 Mô hình gắn cờ 965 đơn, chiếm 1,00% trong 96.478 đơn được khảo sát. Khi chạy lại với seed 7,
-Jaccard giữa hai tập đơn bất thường đạt 0,7970. Chỉ số này phản ánh độ trùng giữa hai lần chạy,
+Jaccard giữa hai tập đơn bất thường đạt 0,7953. Chỉ số này phản ánh độ trùng giữa hai lần chạy,
 không chứng minh nhãn bất thường là đúng.
 
 So với nhóm bình thường, nhóm bất thường có:
 
-- Trung vị giá trị sản phẩm cao 1,74 lần.
-- Trung vị phí vận chuyển cao 2,89 lần.
+- Trung vị giá trị sản phẩm cao 1,84 lần.
+- Trung vị phí vận chuyển cao 2,90 lần.
 - Trung vị tỷ lệ phí vận chuyển cao 1,44 lần.
 - Trung vị thời gian giao hàng cao 2,46 lần, chỉ tính các giá trị thời gian hợp lệ.
 

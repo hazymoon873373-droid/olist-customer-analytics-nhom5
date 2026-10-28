@@ -3,7 +3,7 @@ KẾT QUẢ ISOLATION FOREST - PHÁT HIỆN ĐƠN HÀNG BẤT THƯỜNG
 Tổng số đơn delivered: 96,478
 Số đơn bất thường: 965
 Tỷ lệ bất thường: 1.00%
-Jaccard giữa seed 42 và seed 7: 0.7970
+Jaccard giữa seed 42 và seed 7: 0.7953
 
 Lưu ý: dữ liệu không có nhãn bất thường thực tế, vì vậy không dùng accuracy/F1.
 Điểm càng cao cho biết đơn hàng càng khác biệt so với phần lớn dữ liệu.

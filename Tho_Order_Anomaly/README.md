@@ -8,7 +8,7 @@ Mô hình dùng **Isolation Forest** và chỉ xét các đơn có trạng thái
 - Số đơn được chấm điểm: **96.478**.
 - Số đơn được gắn cờ bất thường: **965**.
 - Tỷ lệ bất thường: **1,00%**.
-- Độ giống nhau giữa kết quả seed 42 và seed 7 (Jaccard): **0,7970**.
+- Độ giống nhau giữa kết quả seed 42 và seed 7 (Jaccard): **0,7953**.
 - Phí vận chuyển và thời gian giao hàng của nhóm bất thường cao hơn rõ so với nhóm còn lại.
 
 Kết quả này dùng để khoanh vùng đơn cần xem thêm, không khẳng định đơn đó là gian lận.
@@ -29,10 +29,10 @@ late_days
 
 `late_days` chỉ lấy phần giao trễ: đơn giao sớm hoặc đúng hạn có giá trị bằng 0.
 
-Phiên bản `isolation_forest_v2_provisional` nối master với bảng đơn sạch bằng `order_id`.
+Phiên bản `isolation_forest_v3_20261028` nối master mới với bảng đơn sạch bằng `order_id`.
 Đơn không đạt `valid_delay_kpi` vẫn được giữ, nhưng `delivery_days` và `late_days` được
-để thiếu và điền trung vị trong Pipeline. Bản đang có dùng bảng sạch ngày 24/10 và master
-cũ ngày 23/10; chưa được xác nhận là phiên bản nguồn cuối của nhóm. SHA-256 nằm trong
+để thiếu và điền trung vị trong Pipeline. Master ngày 28/10 và các bảng sạch được lưu trong
+`Tho_Shared/data/`; ngày mua và ngày giao thực tế lấy từ bảng đơn sạch. SHA-256 nằm trong
 `data/source_metadata.json` và `outputs/model_metrics.json`.
 
 ## Cách chạy
@@ -41,7 +41,7 @@ Từ thư mục gốc repository:
 
 ```bash
 pip install -r Tho_Order_Anomaly/requirements.txt
-python Tho_Order_Anomaly/source-code/run_all.py --clean-orders "duong-dan/olist_orders_clean.csv"
+python Tho_Order_Anomaly/source-code/run_all.py
 ```
 
 Excel được tạo lại bằng XlsxWriter theo danh sách thư viện trong `requirements.txt`.

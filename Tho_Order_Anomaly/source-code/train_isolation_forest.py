@@ -321,7 +321,7 @@ def main():
     metrics = {
         "algorithm": "Isolation Forest",
         "data_scope": "delivered orders",
-        "model_version": "isolation_forest_v2_provisional",
+        "model_version": "isolation_forest_v3_20261028",
         "source_metadata": source_metadata,
         "invalid_delay_kpi_orders": int((~valid).sum()),
         "total_orders": int(len(scored_data)),
@@ -344,7 +344,7 @@ def main():
         "reason_thresholds": thresholds,
         "contamination": CONTAMINATION,
         "algorithm": "Isolation Forest",
-        "model_version": "isolation_forest_v2_provisional",
+        "model_version": "isolation_forest_v3_20261028",
         "source_metadata": source_metadata,
     }
     joblib.dump(bundle, model_dir / "isolation_forest_order_pipeline.joblib")

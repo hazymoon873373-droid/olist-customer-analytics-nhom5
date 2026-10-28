@@ -13,6 +13,7 @@ def export_summary(output_dir):
     columns = ["order_id", "customer_unique_id", "valid_delay_kpi", "delivery_days", "late_days", "anomaly_score", "anomaly_reason"]
     workbook = xlsxwriter.Workbook(output_dir / "anomaly_summary.xlsx")
     header = workbook.add_format({"bold": True, "font_color": "white", "bg_color": "#1F4E78"})
+    percent = workbook.add_format({"num_format": "0.00%"})
 
     def write_sheet(name, rows, widths):
         sheet = workbook.add_worksheet(name)
@@ -24,7 +25,10 @@ def export_summary(output_dir):
                 if value is None or pd.isna(value):
                     continue
                 if isinstance(value, (bool, int, float, str)):
-                    sheet.write(row_index, col_index, value, header if row_index == 0 else None)
+                    cell_format = header if row_index == 0 else None
+                    if name == "Tong_quan" and row_index == 5 and col_index == 1:
+                        cell_format = percent
+                    sheet.write(row_index, col_index, value, cell_format)
                 else:
                     sheet.write(row_index, col_index, str(value), header if row_index == 0 else None)
         sheet.freeze_panes(1, 0)

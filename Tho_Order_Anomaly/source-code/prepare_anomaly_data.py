@@ -7,6 +7,8 @@ import sys
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "Tho_Shared"))
+from load_orders import MASTER_FILE, CLEAN_ORDERS_FILE, load_orders, source_metadata
 
 REQUIRED_COLUMNS = [
     "order_id",
@@ -42,8 +44,8 @@ MODEL_FEATURES = [
 ]
 
 
-def load_order_master(input_path):
-    data = pd.read_csv(input_path, usecols=REQUIRED_COLUMNS, low_memory=False)
+def load_order_master(input_path, clean_orders_path=CLEAN_ORDERS_FILE):
+    data = load_orders(master_path=input_path, clean_orders_path=clean_orders_path)
     missing_columns = [
         column for column in REQUIRED_COLUMNS if column not in data.columns
     ]
@@ -121,16 +123,13 @@ def parse_args():
     repo_dir = project_dir.parent
     parser = ArgumentParser(description="Chuẩn bị dữ liệu phát hiện đơn hàng bất thường")
     parser.add_argument(
-        "--clean-orders", type=Path, required=True,
+        "--clean-orders", type=Path, default=CLEAN_ORDERS_FILE,
         help="File olist_orders_clean.csv có cờ valid_delay_kpi",
     )
     parser.add_argument(
         "--input",
         type=Path,
-        default=repo_dir
-        / "Tho_RFM_KMeans"
-        / "data"
-        / "olist_powerbi_orders_master.csv",
+        default=MASTER_FILE,
     )
     parser.add_argument(
         "--output",
@@ -146,7 +145,7 @@ def main():
 
     args = parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    orders = load_order_master(args.input)
+    orders = load_order_master(args.input, args.clean_orders)
     clean_orders = pd.read_csv(args.clean_orders, low_memory=False, na_values=["null"])
     missing = [column for column in CLEAN_COLUMNS if column not in clean_orders]
     if missing:
@@ -170,7 +169,8 @@ def main():
         "clean_orders_modified_time_utc": pd.Timestamp(args.clean_orders.stat().st_mtime, unit="s", tz="UTC").isoformat(),
         "delivered_orders": len(result),
         "invalid_delay_kpi_orders": int((~result["valid_delay_kpi"]).sum()),
-        "source_status": "Chờ nhóm xác nhận bản master và dữ liệu sạch chính thức",
+        "input_sources": source_metadata(args.input, args.clean_orders),
+        "source_status": "Master nhóm cập nhật 28/10/2026 và bảng đơn sạch trong processed",
     }
     (args.output.parent / "source_metadata.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
