@@ -13,12 +13,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
-    average_precision_score, classification_report, confusion_matrix,
+    accuracy_score, average_precision_score, classification_report, confusion_matrix,
     precision_recall_curve, roc_auc_score, roc_curve,
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from export_temporal_summary import export_summary
+from prediction_utils import score_deciles
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "Tho_Shared"))
 from load_orders import MASTER_FILE, CLEAN_ORDERS_FILE, load_orders as load_shared_orders, source_metadata
@@ -31,7 +32,6 @@ TEST_T0 = pd.Timestamp("2018-03-01 00:00:00")
 BI_T0 = pd.Timestamp("2018-08-31 00:00:00")
 OBSERVATION_END = pd.Timestamp("2018-08-31 00:00:00")
 HORIZON = pd.Timedelta(days=180)
-UNRESOLVED = {"created", "approved", "processing", "invoiced", "shipped"}
 NUMERIC = [
     "recency", "frequency", "monetary", "orders_last_30d", "orders_last_90d",
     "orders_last_180d", "spend_last_30d", "spend_last_90d", "spend_last_180d",
@@ -75,7 +75,10 @@ def build_snapshot(orders, t0, observation_end=OBSERVATION_END, min_orders=2, ac
         & orders.order_delivered_customer_date.ge(orders.order_purchase_timestamp)
     ].dropna(subset=["customer_unique_id", "order_id", "order_purchase_timestamp"]).copy()
     if history.empty:
-        return pd.DataFrame()
+        return pd.DataFrame(columns=[
+            "customer_unique_id", "snapshot_timestamp", "prediction_window_end",
+            "sample_id", "churn_proxy_180d", "label_status_or_reason", *FEATURES,
+        ])
     history = history.sort_values(["customer_unique_id", "order_purchase_timestamp", "order_id"])
     history["days_from_snapshot"] = (t0 - history.order_purchase_timestamp).dt.total_seconds() / 86400
     history["days_between_orders"] = history.groupby("customer_unique_id").order_purchase_timestamp.diff().dt.total_seconds() / 86400
@@ -112,7 +115,7 @@ def build_snapshot(orders, t0, observation_end=OBSERVATION_END, min_orders=2, ac
         & future.order_delivered_customer_date.lt(known_by)
     )
     returned = set(future.loc[confirmed, "customer_unique_id"].dropna())
-    pending_mask = future.order_status.isin(UNRESOLVED) | future.order_status.isna()
+    pending_mask = ~future.order_status.isin(["delivered", "canceled", "unavailable"])
     pending_mask |= future.order_status.eq("delivered") & ~confirmed
     # Không có thời điểm hủy, nên không thể xác nhận nhãn train đã biết vào T0 test.
     if label_known_by is not None:
@@ -120,7 +123,7 @@ def build_snapshot(orders, t0, observation_end=OBSERVATION_END, min_orders=2, ac
     pending = set(future.loc[pending_mask, "customer_unique_id"].dropna())
     customers["churn_proxy_180d"] = pd.Series(pd.NA, index=customers.index, dtype="Int64")
     customers["label_status_or_reason"] = "insufficient_followup"
-    if end <= pd.Timestamp(observation_end):
+    if end <= known_by:
         customers["label_status_or_reason"] = "observed"
         customers["churn_proxy_180d"] = 1
         pending_mask = customers.index.isin(pending) & ~customers.index.isin(returned)
@@ -165,21 +168,13 @@ def make_logistic_pipeline():
                      ("model", LogisticRegression(class_weight="balanced", max_iter=2000, random_state=42))])
 
 
-def score_deciles(probability):
-    """Decile 1 has highest churn score; stable ordering resolves ties."""
-    scores = pd.Series(probability)
-    if scores.isna().any() or not scores.between(0, 1).all():
-        raise ValueError("Invalid churn probability")
-    if scores.empty:
-        return pd.Series(dtype="int64", index=scores.index)
-    rank = scores.rank(ascending=False, method="first")
-    # The first decile contains ceil(n/10) rows, matching top-decile lift.
-    return (np.floor((rank - 1) * 10 / len(scores)) + 1).astype(int)
-
-
 def score_metrics(y, probability, threshold=0.5):
+    if len(y) == 0:
+        raise ValueError("Không có mẫu để đánh giá")
     prediction = (probability >= threshold).astype(int)
     report = classification_report(y, prediction, labels=[0, 1], output_dict=True, zero_division=0)
+    # sklearn may omit 'accuracy' if labels include a class absent in y.
+    report["accuracy"] = float(accuracy_score(y, prediction))
     order = np.argsort(-probability, kind="stable")
     top_n = max(1, int(np.ceil(len(y) * 0.1)))
     prevalence = float(np.mean(y))
@@ -210,6 +205,7 @@ def main():
     parser.add_argument("--clean-orders", type=Path, default=CLEAN_ORDERS_FILE)
     parser.add_argument("--handover-dir", type=Path, help="Thu muc tho do Thien xuat; dung order_summary va cac bang sach trong cung phien ban")
     parser.add_argument("--observation-end", default=str(OBSERVATION_END))
+    parser.add_argument("--output-dir", type=Path, default=root / "outputs/temporal_v3_provisional")
     args = parser.parse_args()
     if args.handover_dir is not None:
         args.master = args.handover_dir / "order_summary.csv"
@@ -272,7 +268,7 @@ def main():
         "train_test_customer_overlap": len(set(train.customer_unique_id) & set(test.customer_unique_id)),
         "selection": "Dùng tham số mặc định RandomForest, class_weight=balanced, threshold 0.5; không tối ưu bằng test; chưa có CV theo thời gian do lịch sử ngắn.",
     })
-    out = root / "outputs" / "temporal_v3_provisional"
+    out = args.output_dir
     out.mkdir(parents=True, exist_ok=True)
     eval_cols = ["sample_id", "customer_unique_id", "snapshot_timestamp", "prediction_window_end", "churn_proxy_180d", "label_status_or_reason", "split", "churn_probability", "predicted_churn", "score_decile", "logistic_churn_probability"] + FEATURES
     data[eval_cols].to_csv(out / "snapshot_evaluation.csv", index=False, encoding="utf-8-sig", lineterminator="\n")
@@ -364,7 +360,10 @@ def main():
     pd.DataFrame(scope_totals).to_csv(out / "scope_totals.csv", index=False, encoding="utf-8-sig")
 
     eligible = build_snapshot(orders, BI_T0, observation_end)
-    eligible["churn_probability"] = model.predict_proba(eligible[FEATURES])[:, 1]
+    eligible["churn_probability"] = (
+        model.predict_proba(eligible[FEATURES])[:, 1] if not eligible.empty
+        else pd.Series(dtype="float64", index=eligible.index)
+    )
     eligible["score_decile"] = score_deciles(eligible.churn_probability)
     eligible["risk_level"] = np.where(eligible.churn_probability.ge(0.5), "cao", "thap")
     eligible["eligibility_status"] = "du_dieu_kien"

@@ -58,6 +58,20 @@ class TemporalLabelTests(unittest.TestCase):
         self.assertEqual(self.snapshot([pending]).loc["c1", "label_status_or_reason"], "unresolved_future_order")
         self.assertTrue(pd.isna(self.snapshot([pending]).loc["c1", "churn_proxy_180d"]))
 
+    def test_knowledge_cutoff_and_unknown_status(self):
+        early = self.snapshot(known_by="2018-06-01").loc["c1"]
+        self.assertTrue(pd.isna(early.churn_proxy_180d))
+        self.assertEqual(early.label_status_or_reason, "insufficient_followup")
+        unknown = self.order("f1", "c1", "unrecognized_status", "2018-03-01")
+        self.assertTrue(pd.isna(self.snapshot([unknown]).loc["c1", "churn_proxy_180d"]))
+
+    def test_empty_snapshot_preserves_handover_columns(self):
+        data = pd.DataFrame(self.rows)
+        result = build_snapshot(data, pd.Timestamp("2016-01-01"))
+        self.assertTrue(result.empty)
+        for column in ["customer_unique_id", "sample_id", "frequency", "churn_proxy_180d"]:
+            self.assertIn(column, result.columns)
+
     def test_canceled_is_not_return_and_delivery_after_knowledge_cutoff_is_unknown(self):
         canceled = self.order("f1", "c1", "canceled", "2018-03-01")
         self.assertEqual(self.snapshot([canceled]).loc["c1", "churn_proxy_180d"], 1)
@@ -78,6 +92,7 @@ class TemporalLabelTests(unittest.TestCase):
         result = score_metrics(np.array([1, 1]), np.array([0.6, 0.7]))
         self.assertIsNone(result["roc_auc_churn_1"])
         self.assertIsNone(result["average_precision_churn_1"])
+        self.assertEqual(result["classification_report"]["accuracy"], 1.0)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,24 @@
 
 Temporal v3 có thêm Logistic Regression và baseline đa số trên cùng tập test; xem `outputs/temporal_v3_provisional/baseline_comparison.json`. Bảng test và BI có `score_decile` (1 = xác suất không mua lại cao nhất). Hai bảng xếp hạng theo tập khách riêng. Đây vẫn là kết quả thử nghiệm, không sử dụng trực tiếp để quyết định chăm sóc khách hàng.
 
+## Dự đoán bằng model hiện tại
+
+`predict_churn.py` mặc định dùng Random Forest temporal v3. File đầu vào phải có các feature tính từ dữ liệu đã biết trước cutoff, theo đúng phạm vi tối thiểu hai đơn delivered đã xác nhận trước cutoff và còn hoạt động trong 180 ngày. Script kiểm tra frequency/recency và tôn trọng `eligibility_status` nếu cột đó có sẵn, nhưng không tự xác minh lại lịch sử đơn hoặc nguồn của features.
+
+```powershell
+python -B Tho_Churn_Prediction/source-code/predict_churn.py --input "customer_features.csv" --output "customer_predictions.csv"
+```
+
+Đầu ra giữ các cột đầu vào và thêm xác suất không mua lại/mua lại, dự đoán, ngưỡng, decile (1 = điểm không mua lại cao nhất), phiên bản và trạng thái thử nghiệm. Khách ngoài phạm vi được để trống điểm và dự đoán. File rỗng có đủ header vẫn được xuất với header; thiếu feature hoặc giá trị số không hợp lệ được báo lỗi. Không ghi đè file đầu vào.
+
+Nếu muốn chấm bằng baseline Logistic Regression, chỉ định:
+
+```powershell
+python -B Tho_Churn_Prediction/source-code/predict_churn.py --model Tho_Churn_Prediction/outputs/temporal_v3_provisional/logistic_regression_temporal.joblib --input "customer_features.csv" --output "logistic_predictions.csv"
+```
+
+Script dự đoán không chia train/test hoặc tính metric. Nếu dùng bảng snapshot có nhiều thời điểm, mỗi dòng vẫn là một khách tại một snapshot; không tính chất lượng trên các dòng train. Nhãn cũ trong file input không được dùng làm feature. Chạy lại toàn pipeline với `run_all.py --output-dir "thu-muc-doi-soat"` để tạo kết quả ở vị trí riêng mà không thay bảng đang bàn giao.
+
 Chạy bản mới trên Windows, từ thư mục chứa dự án:
 
 ```powershell
@@ -128,6 +146,7 @@ File đầu vào cần có đủ 18 feature ghi trong báo cáo:
 
 ```powershell
 python -B Tho_Churn_Prediction/source-code/predict_churn.py `
+  --model Tho_Churn_Prediction/models/random_forest_churn_pipeline.joblib `
   --input "duong-dan\customer_features.csv" `
   --output "duong-dan\ket_qua_du_doan.csv"
 ```
@@ -148,4 +167,4 @@ Tho_Churn_Prediction/
 └── requirements.txt
 ```
 
-Model lưu chung bước điền missing, one-hot encoding, Random Forest và ngưỡng 0,57. Không cần xử lý lại feature bằng tay khi gọi `predict_churn.py`.
+Model cũ trong phần đối chiếu này lưu bước điền missing, one-hot encoding, Random Forest và ngưỡng 0,57; cần truyền rõ `--model` như lệnh trên. Model temporal v3 dùng ngưỡng thử nghiệm 0,5.
