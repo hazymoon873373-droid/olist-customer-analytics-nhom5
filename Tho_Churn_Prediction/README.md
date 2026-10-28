@@ -1,57 +1,75 @@
-# Dự đoán churn proxy 180 ngày bằng Random Forest
+# Dự đoán không mua lại 180 ngày — temporal v4
 
-> Bản hiện tại dùng dữ liệu chung và bảng sạch; xem [báo cáo temporal v3](reports/bao_cao_temporal_v3.md). Mốc theo dõi cuối vẫn là giả định cần nhóm xác nhận.
+Bản đang dùng: `outputs/temporal_v4_provisional/`. Xem
+[báo cáo và giới hạn](reports/bao_cao_temporal_v4.md).
 
-Temporal v3 có thêm Logistic Regression và baseline đa số trên cùng tập test; xem `outputs/temporal_v3_provisional/baseline_comparison.json`. Bảng test và BI có `score_decile` (1 = xác suất không mua lại cao nhất). Hai bảng xếp hạng theo tập khách riêng. Đây vẫn là kết quả thử nghiệm, không sử dụng trực tiếp để quyết định chăm sóc khách hàng.
+Pipeline chạy được không đồng nghĩa mô hình đủ chất lượng triển khai. Sáu fold
+validation hiện tại đều thiếu lớp mua lại ở train đủ điều kiện thời gian. Chương trình
+chặn tuning, giữ Random Forest/ngưỡng 0,5 làm baseline và xuất bằng chứng. Test lịch sử
+đã được xem ở các lần review trước; không gọi đây là holdout mới chưa từng tiếp xúc.
 
-## Dự đoán bằng model hiện tại
-
-`predict_churn.py` mặc định dùng Random Forest temporal v3. File đầu vào phải có các feature tính từ dữ liệu đã biết trước cutoff, theo đúng phạm vi tối thiểu hai đơn delivered đã xác nhận trước cutoff và còn hoạt động trong 180 ngày. Script kiểm tra frequency/recency và tôn trọng `eligibility_status` nếu cột đó có sẵn, nhưng không tự xác minh lại lịch sử đơn hoặc nguồn của features.
-
-```powershell
-python -B Tho_Churn_Prediction/source-code/predict_churn.py --input "customer_features.csv" --output "customer_predictions.csv"
-```
-
-Đầu ra giữ các cột đầu vào và thêm xác suất không mua lại/mua lại, dự đoán, ngưỡng, decile (1 = điểm không mua lại cao nhất), phiên bản và trạng thái thử nghiệm. Khách ngoài phạm vi được để trống điểm và dự đoán. File rỗng có đủ header vẫn được xuất với header; thiếu feature hoặc giá trị số không hợp lệ được báo lỗi. Không ghi đè file đầu vào.
-
-Nếu muốn chấm bằng baseline Logistic Regression, chỉ định:
+## Chạy từ thư mục gốc repository
 
 ```powershell
-python -B Tho_Churn_Prediction/source-code/predict_churn.py --model Tho_Churn_Prediction/outputs/temporal_v3_provisional/logistic_regression_temporal.joblib --input "customer_features.csv" --output "logistic_predictions.csv"
-```
-
-Script dự đoán không chia train/test hoặc tính metric. Nếu dùng bảng snapshot có nhiều thời điểm, mỗi dòng vẫn là một khách tại một snapshot; không tính chất lượng trên các dòng train. Nhãn cũ trong file input không được dùng làm feature. Chạy lại toàn pipeline với `run_all.py --output-dir "thu-muc-doi-soat"` để tạo kết quả ở vị trí riêng mà không thay bảng đang bàn giao.
-
-Chạy bản mới trên Windows, từ thư mục chứa dự án:
-
-```powershell
-git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
-cd olist-customer-analytics-nhom5
-git switch codex/tho-machine-learning
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r Tho_Churn_Prediction/requirements.txt
-python -B Tho_Churn_Prediction/source-code/run_all.py
-python -B -m unittest discover -s Tho_Churn_Prediction/tests -v
+.\.venv\Scripts\python.exe -m pip install -r Tho_Churn_Prediction/requirements.txt
+.\.venv\Scripts\python.exe -B Tho_Churn_Prediction/source-code/run_all.py
+.\.venv\Scripts\python.exe -B -m unittest discover -s Tho_Churn_Prediction/tests -v
 ```
 
-Nếu đã tải ZIP đúng nhánh hoặc đã clone, bỏ qua bước `git clone`, đi vào thư mục dự án rồi chạy
-các lệnh còn lại; nếu đã ở đúng nhánh thì bỏ qua `git switch`.
+Đầu vào chung có sẵn trong `Tho_Shared/data/`. Dùng `--output-dir ket_qua_doi_soat`
+để chạy lại mà giữ bản bàn giao. Với gói Thiên export, dùng
+`--handover-dir "duong-dan/handover/tho"`; code đọc order_summary và các bảng sạch
+cùng phiên bản. Nguồn/khóa/ngày/cờ được kiểm tra trước khi fit. `--observation-end`
+mặc định 31/08/2018 00:00 là giả định chưa được xác nhận đầy đủ theo dõi.
 
-Đầu vào mặc định nằm trong `Tho_Shared/data/`. Tham số `--master` và `--clean-orders` chọn nguồn khác;
-`--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định,
-cần nhóm xác nhận thời gian đủ dữ liệu. Kết quả mới trong `outputs/temporal_v3_provisional/`, gồm CSV
-snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI chỉ để thử tích hợp
-vì model dự đoán toàn bộ test là không mua lại.
+## Validation và cấu hình
 
-Với gói mới do Thiên export, chạy `python -B Tho_Churn_Prediction/source-code/run_all.py --handover-dir "duong-dan/handover/tho"`. Lệnh đọc `order_summary.csv` và ba bảng sạch từ cùng thư mục; snapshot IBGE lấy từ `Tho_Shared/data/ibge_states_raw.json`. Manifest đầu vào được ghi bằng SHA-256. Không dùng file nhãn 90 ngày cũ.
+`temporal_selection.py` không nhận tập test để chọn cấu hình. Nhãn train phải hoàn tất
+trước T0 validation, nhãn validation phải hoàn tất trước T0 test. Nhãn được dựng lại
+với thông tin biết tại từng mốc; không dùng nhãn tương lai để huấn luyện ngược thời gian.
 
-Ngưỡng 180 ngày được tham khảo từ nghiên cứu của Zeinali và cộng sự (2026) trên dữ liệu Olist:
-[bài nghiên cứu](https://doi.org/10.1155/tswj/1946904). Bản dự đoán của nhóm dùng cửa sổ
-`[T0, T0 + 180 ngày)` và gọi nhãn 1 là “không mua lại trong 180 ngày”, không khẳng định
-khách rời bỏ vĩnh viễn. Chi tiết và giới hạn của nguồn được ghi trong báo cáo temporal v3.
+Guard tối thiểu 5 khách khác nhau/lớp ở train và validation là mức cho thử nghiệm nhỏ,
+không phải chứng nhận đủ độ tin cậy thống kê. Fold không đủ hỗ trợ không được fit/tuning.
+Nếu có fold hợp lệ, RF/LR được so sánh bằng Average Precision lớp mua lại; ngưỡng chọn
+theo F1 lớp mua lại từ lưới cố định 0,05–0,95 trên validation. Không dùng test và không
+ép dự đoán xuất hiện đủ hai lớp. Không có fold hợp lệ thì giữ RF/0,5 và trạng thái blocked.
 
+Xem `validation_protocol.json`, `validation_fold_audit.csv`, `validation_predictions.csv`.
 
-## Lịch sử và bản đang dùng
+## File bàn giao
 
-Chỉ `outputs/temporal_v3_provisional/` là đầu ra hiện tại. Luồng chia theo nhóm khách và temporal v2 đã được bỏ khỏi bản làm việc để tránh dùng nhầm. Có thể xem lại tại [snapshot trước khi dọn](https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5/tree/89faa7f8e3909211543a897710e7168f65a0ff87/Tho_Churn_Prediction). Không dùng điểm các phiên bản khác nguồn hoặc cách chia tập như cùng một phép thử.
+| File | Ý nghĩa |
+|---|---|
+| selected_model.joblib | Model dùng chính thức cho lần chạy, features, threshold, danh tính, metric và lý do chọn/giữ |
+| random_forest_temporal.joblib, logistic_regression_temporal.joblib | Hai candidate để đối chiếu |
+| test_predictions.csv | Một dòng/khách test, nhãn thật, xác suất, dự đoán, split, cutoff, decile và phiên bản |
+| snapshot_evaluation.csv | Khách + snapshot; có khách lặp qua tháng, không join chỉ bằng customer_unique_id |
+| bi_web_customers.csv | Một dòng/khách tại cutoff BI; nhãn thật tương lai để trống |
+| probability_summary.csv | Min/quartile/median/max và số dự đoán theo lớp thật, tập và model |
+| data_contract.json | Khóa, nhãn, cutoff, eligibility, decile và giới hạn |
+| metrics.json, baseline_comparison.json, charts/, temporal_summary.xlsx | Kết quả cùng lần chạy và model/ngưỡng nhất quán |
+
+Train_in_sample chỉ để chẩn đoán, không phải chất lượng độc lập. File validation có
+header nhưng không có dòng nếu không có fold hợp lệ. AP là average precision, không
+tự đổi tên thành PR-AUC hình thang. Importance/hệ số không chứng minh nhân quả.
+
+Khách không đủ điều kiện có xác suất, ngưỡng, nhãn dự đoán, rủi ro và decile để trống;
+không gán thành 0%. RFM/K-Means là mô tả hồi cứu tới 30/08/2018, không đưa cụm cuối kỳ
+vào features của test 01/03/2018. Decile 1 xếp churn_probability cao nhất, test và BI
+xếp riêng. Baseline điểm hoàn toàn bằng nhau có lift kỳ vọng 1, không có lợi thế
+xếp hạng; khi có hòa ở biên decile, báo rõ số lượng và thứ tự ổn định.
+
+## Dự đoán file feature
+
+```powershell
+python -B Tho_Churn_Prediction/source-code/predict_churn.py --input customer_features.csv --output customer_predictions.csv
+```
+
+Mặc định đọc selected_model.joblib; `--model` cho phép chọn candidate rõ ràng. File
+features phải được tạo từ thông tin biết trước cutoff. Lệnh kiểm tra schema và
+frequency/recency/eligibility nhưng không tự xác minh toàn bộ lịch sử. Không ghi đè
+input. Xác suất chưa hiệu chuẩn, không phải tỷ lệ chắc chắn.
+
+Artifact v3 đã thay thế được giữ trong lịch sử Git tại commit `0dae8ad`. V4 là thư mục
+đầu ra hiện hành duy nhất để tránh dùng nhầm khi bàn giao.

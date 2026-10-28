@@ -78,6 +78,12 @@ class PredictChurnTests(unittest.TestCase):
             self.assertNotEqual(rejected.returncode, 0)
             self.assertEqual(before, input_file.read_bytes())
 
+    def test_saved_nondefault_threshold_controls_inference(self):
+        bundle = {**self.bundle, 'threshold': .99}
+        result = predict_customers(bundle, self.test.head(8))
+        np.testing.assert_array_equal(result.predicted_churn, (result.churn_probability >= .99).astype(int))
+        self.assertTrue(result.prediction_threshold.eq(.99).all())
+
 
 if __name__ == "__main__":
     unittest.main()
