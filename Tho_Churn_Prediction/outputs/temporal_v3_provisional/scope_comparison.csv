@@ -1,0 +1,15 @@
+﻿scope,snapshot_timestamp,rows,customers,return_0,no_repurchase_1,unknown
+at_least_1_delivered,2017-04-01,4188,4188,62,4125,1
+at_least_1_delivered,2017-05-01,5991,5991,81,5908,2
+at_least_1_delivered,2017-06-01,9629,9629,145,9481,3
+at_least_1_delivered,2017-07-01,12751,12751,200,12546,5
+at_least_1_delivered,2017-08-01,16095,16095,247,15842,6
+at_least_1_delivered,2017-09-01,20237,20237,308,19907,22
+at_least_1_delivered,2018-03-01,51885,51885,591,51290,4
+at_least_2_active_180d,2017-04-01,73,73,0,73,0
+at_least_2_active_180d,2017-05-01,111,111,3,108,0
+at_least_2_active_180d,2017-06-01,184,184,6,178,0
+at_least_2_active_180d,2017-07-01,277,277,11,266,0
+at_least_2_active_180d,2017-08-01,345,345,16,329,0
+at_least_2_active_180d,2017-09-01,437,437,22,415,0
+at_least_2_active_180d,2018-03-01,944,944,48,896,0

@@ -27,6 +27,11 @@ Nhánh này cũng có thư mục `Tho_Churn_Prediction/`. Phần supervised lear
 
 Thư mục `Tho_Order_Anomaly/` dùng Isolation Forest để khảo sát các đơn hàng đã giao có đặc điểm bất thường. Phần này có Pipeline, model, CSV chấm điểm, biểu đồ, Excel tổng hợp và nội dung báo cáo.
 
+Nguồn đầu vào mới cho ba phần ML nằm trong `Tho_Shared/data/`. K-Means được giữ sau đối soát RFM;
+Isolation Forest đã chạy lại; kết quả Random Forest theo thời gian và hai bảng tích hợp nằm trong
+`Tho_Churn_Prediction/outputs/temporal_v3_provisional/`. Mốc theo dõi 180 ngày cần nhóm xác nhận;
+model hiện chưa nhận diện được khách mua lại ở tập test nên bảng BI chỉ để thử tích hợp.
+
 ## Bắt đầu
 
 ```powershell

@@ -1,5 +1,38 @@
 # Dự đoán churn proxy 180 ngày bằng Random Forest
 
+> **Đọc trước:** Kết quả chia theo nhóm khách bên dưới là bản cũ, dùng master cũ có 8 ngày giao được điền và thời điểm snapshot chưa thống nhất. Bản hiện tại dùng master mới và bảng sạch, xem [báo cáo temporal v3](reports/bao_cao_temporal_v3.md). Mốc theo dõi cuối vẫn là giả định cần nhóm xác nhận.
+
+Chạy bản mới trên Windows, từ thư mục chứa dự án:
+
+```powershell
+git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
+cd olist-customer-analytics-nhom5
+git switch codex/tho-machine-learning
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r Tho_Churn_Prediction/requirements.txt
+python -B Tho_Churn_Prediction/source-code/run_all.py
+python -B -m unittest discover -s Tho_Churn_Prediction/tests -v
+```
+
+Nếu đã tải ZIP đúng nhánh hoặc đã clone, bỏ qua bước `git clone`, đi vào thư mục dự án rồi chạy
+các lệnh còn lại; nếu đã ở đúng nhánh thì bỏ qua `git switch`.
+
+Đầu vào mặc định nằm trong `Tho_Shared/data/`. Tham số `--master` và `--clean-orders` chọn nguồn khác;
+`--observation-end` là mốc quan sát loại trừ cuối cùng. Mặc định 2018-08-31 00:00:00 chỉ là giả định,
+cần nhóm xác nhận thời gian đủ dữ liệu. Kết quả mới trong `outputs/temporal_v3_provisional/`, gồm CSV
+snapshot, CSV BI/web, model, metric, biểu đồ và Excel được sinh lại cùng lệnh. Bảng BI chỉ để thử tích hợp
+vì model dự đoán toàn bộ test là không mua lại.
+
+Ngưỡng 180 ngày được tham khảo từ nghiên cứu của Zeinali và cộng sự (2026) trên dữ liệu Olist:
+[bài nghiên cứu](https://doi.org/10.1155/tswj/1946904). Bản dự đoán của nhóm dùng cửa sổ
+`[T0, T0 + 180 ngày)` và gọi nhãn 1 là “không mua lại trong 180 ngày”, không khẳng định
+khách rời bỏ vĩnh viễn. Chi tiết và giới hạn của nguồn được ghi trong báo cáo temporal v3.
+
+---
+
+## Bản đối chiếu cũ theo nhóm khách
+
 Phần này dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Mô hình sử dụng `RandomForestClassifier` với `class_weight="balanced"`.
 
 - Người thực hiện: Bui Minh Tho
@@ -22,18 +55,9 @@ Nhãn được tạo như sau:
 
 Mỗi dòng được xác định bằng `sample_id`, gồm mã khách hàng và ngày snapshot. Feature chỉ dùng dữ liệu đã có trước snapshot.
 
-## Chạy trên máy khác
+## Chạy lại bản cũ để đối chiếu
 
-Yêu cầu Python 3.11 trở lên:
-
-```powershell
-git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
-cd olist-customer-analytics-nhom5
-git switch codex/tho-machine-learning
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r Tho_Churn_Prediction/requirements.txt
-```
+Yêu cầu Python 3.11 trở lên và các thư viện trong `requirements.txt`.
 
 File đầu vào đã nằm tại:
 
@@ -41,13 +65,7 @@ File đầu vào đã nằm tại:
 Tho_RFM_KMeans/data/olist_powerbi_orders_master.csv
 ```
 
-Chạy lại toàn bộ:
-
-```powershell
-python -B Tho_Churn_Prediction/source-code/run_all.py
-```
-
-Hoặc chạy riêng từng bước:
+Chạy bản cũ riêng để đối chiếu (không dùng làm bản tích hợp):
 
 ```powershell
 python -B Tho_Churn_Prediction/source-code/prepare_churn_data.py
@@ -100,7 +118,7 @@ Bảng dữ liệu gồm 5.920 mẫu customer-snapshot của 1.484 khách hàng:
 
 Trên train, weighted F1 đạt 0,9596 nhưng trên test còn 0,8993. Khoảng chênh này cho thấy model học tập train khá mạnh. Vì dữ liệu mất cân bằng, cần đọc balanced accuracy, macro F1 và kết quả từng lớp thay vì chỉ nhìn accuracy hoặc weighted average.
 
-## Dự đoán file mới
+## Dự đoán bằng model cũ
 
 File đầu vào cần có đủ 18 feature ghi trong báo cáo:
 
@@ -110,7 +128,7 @@ python -B Tho_Churn_Prediction/source-code/predict_churn.py `
   --output "duong-dan\ket_qua_du_doan.csv"
 ```
 
-Kết quả có thêm xác suất churn, nhãn dự đoán và ngưỡng đã chọn trên train.
+Kết quả có thêm xác suất churn, nhãn dự đoán và ngưỡng đã chọn trên train. Script cũ chỉ chấm các dòng có `frequency >= 2` và `0 <= recency <= 180`; điều này không tự chứng minh dữ liệu đặc trưng đã được tính đúng tại T0.
 
 ## Cấu trúc thư mục
 

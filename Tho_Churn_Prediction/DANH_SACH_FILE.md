@@ -1,11 +1,16 @@
 # Danh sách file dự đoán churn
 
+Các file mới có phiên bản tạm thời nằm trong `outputs/temporal_v3_provisional/`.
+Đọc `reports/bao_cao_temporal_v3.md` để biết quy ước, nguồn và hạn chế trước khi dùng.
+
 ## Code
 
 - `source-code/prepare_churn_data.py`: tạo feature và nhãn churn proxy 180 ngày.
 - `source-code/train_churn_model.py`: chia train/test, tối ưu, huấn luyện và đánh giá Random Forest.
 - `source-code/predict_churn.py`: dùng model đã lưu để dự đoán file feature mới.
-- `source-code/run_all.py`: chạy bước tạo dữ liệu và huấn luyện liên tiếp.
+- `source-code/run_all.py`: chạy đánh giá temporal mới, yêu cầu bảng đơn sạch có cờ chất lượng.
+- `source-code/evaluate_temporal.py`: tạo snapshot, huấn luyện và đánh giá theo thời gian.
+- `source-code/export_temporal_summary.py`: xuất Excel từ kết quả temporal.
 
 ## Dữ liệu và model
 

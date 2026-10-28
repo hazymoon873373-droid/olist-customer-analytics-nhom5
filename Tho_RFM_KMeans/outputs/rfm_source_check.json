@@ -1,0 +1,51 @@
+{
+  "reference_date": "2018-08-30",
+  "source_inputs": {
+    "master": {
+      "file": "olist_powerbi_orders_master_20261028.csv",
+      "sha256": "59b98b686c3bde39d50d7502d94637e708b37f20530466917da241aa06344f3e"
+    },
+    "clean_orders": {
+      "file": "olist_orders_clean.csv",
+      "sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8"
+    },
+    "clean_payments": {
+      "file": "olist_order_payments_clean.csv",
+      "sha256": "363b3f9bde8ca98f6f36d4a68b24c4a711222df88d13e700d24e65bc8d32e2c3"
+    },
+    "ibge_states": {
+      "file": "ibge_states_raw.json",
+      "sha256": "6b001067b04e037095410ce8d33e11a2d77bf63750354a09608b12f086324f04"
+    },
+    "clean_customers": {
+      "file": "olist_customers_clean.csv",
+      "sha256": "c35df38fc2e81bb648484d14e6681322a256c1b208bce86e1110a22ffb3c39ca"
+    },
+    "clean_items": {
+      "file": "olist_order_items_clean.csv",
+      "sha256": "f150d8ff15bdb615f65698d9bd8ad1b0801c98e13e120d9a10064118845f8301"
+    }
+  },
+  "tam_rfm_file": "rfm_table_tam_20261028.csv",
+  "tam_rfm_sha256": "dfbbeaa37e81cc2cca6c8500ab5715f261647c1886b9aa1f186a213acf27d30e",
+  "comparisons": {
+    "tam": {
+      "customers_new": 93358,
+      "customers_reference": 93358,
+      "unmatched_customers": 0,
+      "recency_mismatches": 0,
+      "frequency_mismatches": 0,
+      "monetary_mismatches": 0
+    },
+    "saved_kmeans": {
+      "customers_new": 93358,
+      "customers_reference": 93358,
+      "unmatched_customers": 0,
+      "recency_mismatches": 0,
+      "frequency_mismatches": 0,
+      "monetary_mismatches": 0
+    }
+  },
+  "predictions_checked": 93358,
+  "result": "R/F/M khớp; giữ model K-Means hiện tại, không train lại"
+}

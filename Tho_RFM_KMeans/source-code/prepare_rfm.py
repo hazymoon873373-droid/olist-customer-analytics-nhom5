@@ -5,6 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "Tho_Shared"))
+from load_orders import MASTER_FILE, load_orders
 
 if sys.platform.startswith("win"):
     try:
@@ -25,7 +27,7 @@ RFM_REFERENCE_DATE = pd.Timestamp("2018-08-30")
 
 
 def read_order_master(input_file):
-    df = pd.read_csv(input_file, low_memory=False)
+    df = load_orders(master_path=input_file)
     missing_columns = [col for col in REQUIRED_COLUMNS if col not in df.columns]
     if missing_columns:
         raise ValueError(f"Thiếu cột trong order master: {missing_columns}")
@@ -114,7 +116,7 @@ def main():
     parser.add_argument(
         "--input",
         type=Path,
-        default=project_dir / "data" / "olist_powerbi_orders_master.csv",
+        default=MASTER_FILE,
     )
     parser.add_argument(
         "--output",

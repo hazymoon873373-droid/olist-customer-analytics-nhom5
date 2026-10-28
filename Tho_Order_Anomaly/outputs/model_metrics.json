@@ -1,6 +1,45 @@
 {
   "algorithm": "Isolation Forest",
   "data_scope": "delivered orders",
+  "model_version": "isolation_forest_v3_20261028",
+  "source_metadata": {
+    "master_file": "olist_powerbi_orders_master_20261028.csv",
+    "master_sha256": "59b98b686c3bde39d50d7502d94637e708b37f20530466917da241aa06344f3e",
+    "master_modified_time_utc": "2026-10-28T06:28:45.432605982+00:00",
+    "clean_orders_file": "olist_orders_clean.csv",
+    "clean_orders_sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8",
+    "clean_orders_modified_time_utc": "2026-10-24T06:02:22+00:00",
+    "delivered_orders": 96478,
+    "invalid_delay_kpi_orders": 1381,
+    "input_sources": {
+      "master": {
+        "file": "olist_powerbi_orders_master_20261028.csv",
+        "sha256": "59b98b686c3bde39d50d7502d94637e708b37f20530466917da241aa06344f3e"
+      },
+      "clean_orders": {
+        "file": "olist_orders_clean.csv",
+        "sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8"
+      },
+      "clean_payments": {
+        "file": "olist_order_payments_clean.csv",
+        "sha256": "363b3f9bde8ca98f6f36d4a68b24c4a711222df88d13e700d24e65bc8d32e2c3"
+      },
+      "ibge_states": {
+        "file": "ibge_states_raw.json",
+        "sha256": "6b001067b04e037095410ce8d33e11a2d77bf63750354a09608b12f086324f04"
+      },
+      "clean_customers": {
+        "file": "olist_customers_clean.csv",
+        "sha256": "c35df38fc2e81bb648484d14e6681322a256c1b208bce86e1110a22ffb3c39ca"
+      },
+      "clean_items": {
+        "file": "olist_order_items_clean.csv",
+        "sha256": "f150d8ff15bdb615f65698d9bd8ad1b0801c98e13e120d9a10064118845f8301"
+      }
+    },
+    "source_status": "Master nhóm cập nhật 28/10/2026 và bảng đơn sạch trong processed"
+  },
+  "invalid_delay_kpi_orders": 1381,
   "total_orders": 96478,
   "anomaly_orders": 965,
   "normal_orders": 95513,
@@ -9,6 +48,6 @@
   "random_state": 42,
   "n_estimators": 200,
   "max_samples": 4096,
-  "seed_7_42_jaccard": 0.8020541549953315,
+  "seed_7_42_jaccard": 0.7953488372093023,
   "score_note": "anomaly_score càng cao thì đơn hàng càng bất thường"
 }

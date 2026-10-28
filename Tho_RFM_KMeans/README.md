@@ -1,6 +1,6 @@
 # RFM và K-Means
 
-Phần này phân khúc khách hàng Olist bằng ba biến Recency, Frequency và Monetary. Dữ liệu đầu vào là `olist_powerbi_orders_master.csv`.
+Phần này phân khúc khách hàng Olist bằng ba biến Recency, Frequency và Monetary. Dữ liệu đầu vào chung nằm trong `Tho_Shared/data/`.
 
 ## Quy tắc tính RFM
 
@@ -12,6 +12,11 @@ Phần này phân khúc khách hàng Olist bằng ba biến Recency, Frequency v
 - Dùng toàn bộ lịch sử đơn delivered đến hết ngày 30/08/2018.
 - Không dùng `valid_delay_kpi` để loại đơn khỏi bảng RFM.
 
+Đối soát master nhóm cập nhật ngày 28/10 với bảng RFM của Tâm và kết quả đã lưu cho thấy R/F/M
+khớp trên 93.358 khách. Model K-Means hiện tại được giữ nguyên. Bảng gán cụm dùng
+`kmeans_cluster` và `kmeans_segment`, tách khỏi phân khúc RFM theo luật. Cần Tâm xác nhận
+quy ước và bảng đối chiếu trước khi tích hợp chính thức.
+
 Sau khi lọc còn 93.358 khách hàng. Ba biến RFM được biến đổi `log1p`, chuẩn hóa bằng `StandardScaler` rồi mới đưa vào K-Means.
 
 ## Cài thư viện
@@ -20,9 +25,16 @@ Sau khi lọc còn 93.358 khách hàng. Ba biến RFM được biến đổi `lo
 python -m pip install -r Tho_RFM_KMeans/requirements.txt
 ```
 
-## Chạy lại toàn bộ
+## Kiểm tra và giữ model hiện tại
 
-Đặt `olist_powerbi_orders_master.csv` trong `Tho_RFM_KMeans/data/`, sau đó chạy:
+Lệnh này dựng lại RFM từ nguồn chung, so với bảng của Tâm và nhãn model đã lưu, cập nhật
+file đối chiếu và Excel; không train lại model:
+
+```powershell
+python -B Tho_RFM_KMeans/source-code/verify_rfm.py
+```
+
+Nếu cần huấn luyện lại toàn bộ:
 
 ```powershell
 python -B Tho_RFM_KMeans/source-code/train_kmeans.py
@@ -38,7 +50,7 @@ Hoặc truyền đường dẫn trực tiếp:
 
 ```powershell
 python -B Tho_RFM_KMeans/source-code/train_kmeans.py `
-  --input "D:\duong-dan\olist_powerbi_orders_master.csv"
+  --input "D:\duong-dan\master_moi.csv"
 ```
 
 Chạy test:
@@ -76,7 +88,7 @@ Tho_RFM_KMeans/
 ├── models/            # Pipeline log1p + scaler + K-Means
 ├── outputs/           # CSV, metric và biểu đồ
 ├── reports/           # Các bước thực hiện và nội dung báo cáo
-└── data/              # Dữ liệu đầu vào local, không commit
+└── data/              # Bản đầu vào cũ, giữ để đối chiếu
 ```
 
 Model lưu cả bước `log1p` và chuẩn hóa. Khi dự đoán chỉ cần đưa vào ba cột `recency`, `frequency`, `monetary`, không xử lý lại bằng tay.
