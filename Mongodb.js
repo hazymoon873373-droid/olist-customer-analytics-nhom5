@@ -57,27 +57,48 @@ print("\n>>> ĐÃ KẾT NỐI CSDL: " + db.getName() + " <<<");
 // ---------------------------------------------------------------------
 // BƯỚC 2: PHÂN BIỆT NULL CÓ SẴN VÀ THỐNG KÊ LỖI CHUYỂN ĐỔI BSON
 // ---------------------------------------------------------------------
+// Check every converted field and stop before any writes on bad input.
 function auditPreConversionFailures(collectionName, fieldName, targetType) {
-  var coll = db.getCollection(collectionName);
-  var originalNulls = coll.countDocuments({ $or: [{ [fieldName]: null }, { [fieldName]: "" }, { [fieldName]: "null" }] });
-  
-  var invalidFormatCount = 0;
-  if (targetType === "number") {
-    invalidFormatCount = coll.countDocuments({
-      $and: [
-        { [fieldName]: { $exists: true, $ne: null } },
-        { [fieldName]: { $not: { $type: "number" } } },
-        { [fieldName]: { $not: { $regex: "^-?[0-9]+(\\.[0-9]+)?$" } } },
-        { [fieldName]: { $nin: ["", "null", "nan", "None"] } }
-      ]
-    });
-  }
-  print("   * " + collectionName + "." + fieldName + " -> Null ban đầu: " + originalNulls + " | Chuỗi số lỗi: " + invalidFormatCount);
+  const field = "$" + fieldName;
+  const inputText = { $toLower: { $trim: { input: { $convert: { input: field, to: "string", onError: "__INVALID__", onNull: "" } } } } };
+  const cleaned = { $cond: [{ $in: [inputText, ["", "null", "nan", "none"]] }, null, field] };
+  const converted = targetType === "int"
+    ? { $convert: { input: { $convert: { input: cleaned, to: "double", onError: "__INVALID__", onNull: null } }, to: "int", onError: "__INVALID__", onNull: null } }
+    : { $convert: { input: cleaned, to: targetType, onError: "__INVALID__", onNull: null } };
+  const rows = db.getCollection(collectionName).aggregate([
+    { $project: { value: cleaned, result: converted } },
+    { $group: { _id: null, nulls: { $sum: { $cond: [{ $eq: ["$value", null] }, 1, 0] } },
+      errors: { $sum: { $cond: [{ $eq: ["$result", "__INVALID__"] }, 1, 0] } } } }
+  ]).toArray();
+  const stats = rows[0] || { nulls: 0, errors: 0 };
+  print(collectionName + "." + fieldName + ": null=" + stats.nulls + ", loi=" + stats.errors);
+  if (stats.errors) throw new Error("Khong the chuyen kieu: " + collectionName + "." + fieldName);
 }
-
-print("\n--- BƯỚC 2: KIỂM TRA CHUỖI SỐ LỖI TRƯỚC KHUYỂN ĐỔI ---");
-auditPreConversionFailures("olist_products_clean", "product_name_lenght", "number");
-auditPreConversionFailures("olist_products_clean", "product_weight_g", "number");
+const fieldTypes = {
+  olist_orders_clean: { order_purchase_timestamp: "date", order_approved_at: "date", order_delivered_carrier_date: "date", order_delivered_customer_date: "date", order_estimated_delivery_date: "date" },
+  olist_products_clean: { product_name_lenght: "int", product_description_lenght: "int", product_photos_qty: "int", product_weight_g: "double" },
+  olist_order_items_clean: { order_item_id: "int", shipping_limit_date: "date", price: "double", freight_value: "double" },
+  olist_order_payments_clean: { payment_sequential: "int", payment_installments: "int", payment_value: "double" },
+  olist_order_reviews_clean: { review_score: "int" },
+  geo_by_zip: { geolocation_lat: "double", geolocation_lng: "double", point_count: "int" }
+};
+Object.entries(fieldTypes).forEach(([coll, fields]) => Object.entries(fields).forEach(([field, type]) => auditPreConversionFailures(coll, field, type)));
+const zipFields = { olist_customers_clean: "customer_zip_code_prefix", olist_sellers_clean: "seller_zip_code_prefix", geo_by_zip: "geolocation_zip_code_prefix" };
+Object.entries(zipFields).forEach(([coll, field]) => {
+  const invalid = db.getCollection(coll).aggregate([
+    { $project: { s: { $convert: { input: "$" + field, to: "string", onError: "", onNull: "" } } } },
+    { $match: { s: { $not: /^[0-9]{1,5}$/ } } }, { $count: "n" }
+  ]).toArray();
+  if (invalid.length) throw new Error("ZIP sai hoac thieu: " + coll + "." + field + " (" + invalid[0].n + ")");
+});
+const boolFields = { olist_orders_clean: ["delivered_missing_date", "valid_delay_kpi"], olist_products_clean: ["category_missing"], geo_by_zip: ["usable_for_geo"] };
+Object.entries(boolFields).forEach(([coll, fields]) => fields.forEach(field => {
+  const invalid = db.getCollection(coll).aggregate([
+    { $project: { s: { $toLower: { $convert: { input: "$" + field, to: "string", onError: "", onNull: "" } } } } },
+    { $match: { s: { $nin: ["true", "false"] } } }, { $count: "n" }
+  ]).toArray();
+  if (invalid.length) throw new Error("Boolean sai hoac thieu: " + coll + "." + field);
+}));
 
 // ---------------------------------------------------------------------
 // HÀM BỔ TRỢ: ĐỆM MÃ ZIP CHUẨN 5 CHỮ SỐ (TƯƠNG THÍCH MONGODB 4.2+)
@@ -106,7 +127,7 @@ function padZipExpr(fieldPath) {
 
 // ---------------------------------------------------------------------
 // BƯỚC 3: CẬP NHẬT KIỂU DỮ LIỆU TẠI CHỖ (IN-PLACE updateMany PIPELINE)
-// Quy ước thời gian: ISO-8601 UTC (YYYY-MM-DDTHH:mm:ssZ)
+// Nguồn không có timezone; BSON Date lưu số đồng hồ theo UTC, không suy diễn múi giờ nguồn.
 // ---------------------------------------------------------------------
 print("\n--- BƯỚC 3: THỰC THI updateMany CHUYỂN ĐỔI BSON VÀ ĐỆM MÃ ZIP ---");
 
@@ -161,6 +182,11 @@ db.olist_order_payments_clean.updateMany({}, [
   }
 ]);
 
+// Review score must be numeric for $avg in downstream queries.
+db.olist_order_reviews_clean.updateMany({}, [
+  { $set: { review_score: { $convert: { input: { $convert: { input: "$review_score", to: "double", onError: null, onNull: null } }, to: "int", onError: null, onNull: null } } } }
+]);
+
 // 3.5 Ép kiểu và Đệm chuỗi Mã ZIP chuẩn 5 chữ số
 db.olist_customers_clean.updateMany({}, [
   { $set: { customer_zip_code_prefix: padZipExpr("$customer_zip_code_prefix") } }
@@ -201,7 +227,7 @@ db.olist_customers_clean.createIndex({ customer_unique_id: 1 });
 
 print("\n=== HOÀN TẤT ĐỊNH KIỂU VÀ TẠO INDEX TRÊN DATABASE " + db.getName() + " ===");
 
-db = db.getSiblingDB("BigData");
+db = db.getSiblingDB(CONFIG.dbName);
 
 print("\n=======================================================================");
 print("   BÁO CÁO AUDIT DỮ LIỆU VÀ ĐỐI SOÁT BẰNG CHỨNG (DATABASE: BigData)");
@@ -259,7 +285,7 @@ print("\n=======================================================================
 print(" KẾT LUẬN AUDIT TOÀN BỘ CSDL BigData: " + (auditStatus ? "ĐẠT (PASS 100%)" : "KHÔNG ĐẠT (FAIL)"));
 print("=======================================================================\n");
 
-db = db.getSiblingDB("BigData");
+db = db.getSiblingDB(CONFIG.dbName);
 
 var inputCustomerUniqueId = "863336d82222cd6501d03103002b000b";
 
@@ -318,13 +344,13 @@ db.olist_customers_clean.aggregate([
   }
 ]);
 
-db = db.getSiblingDB("BigData");
+db = db.getSiblingDB(CONFIG.dbName);
 
 // Tham số Bộ Lọc Web (Test trường hợp không có kết quả: dùng Bang 'XX')
 var filterStatus = "delivered";
 var startDate = ISODate("2018-01-01T00:00:00Z");
 var endDate = ISODate("2018-07-01T00:00:00Z");
-var filterState = "SP"; 
+var filterState = "SP";
 
 db.olist_orders_clean.aggregate([
   {
@@ -407,7 +433,7 @@ db.olist_orders_clean.aggregate([
         $cond: [
           { $gt: ["$valid_kpi_orders_count", 0] },
           { $round: [{ $multiply: [{ $divide: ["$delayed_orders_count", "$valid_kpi_orders_count"] }, 100] }, 2] },
-          0.0
+          null
         ]
       }
     }
