@@ -2,6 +2,15 @@
 
 Chạy `clean_olist.py` từ dữ liệu raw và import bộ CSV sạch vào database đã chọn. Trong Compass/mongosh chọn cùng database trong `CONFIG.dbName` của `Mongodb.js`, sau đó chạy script. Script dừng trước khi cập nhật nếu thiếu collection, sai số bản ghi đã chốt, giá trị chuyển kiểu không hợp lệ hoặc ZIP thiếu/sai. Bản gốc không có timezone; không diễn giải timestamps lưu trong BSON là múi giờ Brazil đã xác nhận.
 
+Tại thư mục gốc repository, có thể tạo lại dữ liệu sạch từ snapshot đi kèm:
+
+```powershell
+python -m pip install -r requirements.txt
+python -X utf8 -B clean_olist.py --raw_dir "Huy_ThuThap_Olist/dataset/runs/20261019T171446Z_e35970/raw/olist" --output_dir processed
+```
+
+Thư mục `processed` là đầu ra cục bộ và không tự đưa lên Git. `requirements.txt` khóa pandas theo môi trường đã chạy ETL; phần web và ML dùng môi trường/requirements riêng như hướng dẫn của từng phần.
+
 Export không ghi hoặc thay collection trong MongoDB. Cài `pandas` và `pymongo`, đặt `MONGODB_URI` qua biến môi trường nếu dùng Atlas (không commit URI), rồi chạy:
 
 ```powershell
