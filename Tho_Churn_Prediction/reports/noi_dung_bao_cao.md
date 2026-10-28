@@ -1,45 +1,53 @@
-# Nội dung báo cáo: Dự đoán khách hàng không quay lại
+# Nội dung báo cáo: Dự đoán khách hàng rời bỏ
 
 ## Mục tiêu
 
-Nhóm xây dựng mô hình phân loại để ước lượng nguy cơ khách hàng không tiếp tục mua hàng trên Olist trong 180 ngày tiếp theo. Olist không cung cấp trạng thái rời bỏ chính thức nên bài sử dụng nhãn churn proxy dựa trên lịch sử giao dịch.
+Nhóm xây dựng mô hình phân loại để dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Olist không có trạng thái rời bỏ chính thức nên bài sử dụng nhãn churn proxy dựa trên giao dịch.
 
-## Thiết kế dữ liệu theo thời gian
+## Cách tạo nhãn
 
-Ngày snapshot được chọn là 02/03/2018. Toàn bộ feature được tính từ các đơn đã giao thành công trước thời điểm này. Phần dữ liệu từ 03/03/2018 đến 29/08/2018 chỉ dùng để tạo nhãn.
+Khách hàng chỉ được đưa vào bài toán khi đã có ít nhất hai đơn giao thành công và có mua hàng trong 180 ngày gần nhất. Điều kiện này giúp bài toán tập trung vào khách đã hình thành hành vi mua lặp lại.
 
-Khách hàng có ít nhất một đơn giao thành công trong 180 ngày sau snapshot được gán nhãn 0. Khách không phát sinh đơn giao thành công được gán nhãn 1. Cách tách này ngăn thông tin tương lai đi vào feature.
+Dữ liệu được tạo tại 12 snapshot hàng tháng từ tháng 04/2017 đến tháng 03/2018. Tại mỗi snapshot, khách có đơn giao thành công trong 180 ngày tiếp theo được gán nhãn 0. Khách không có đơn được gán nhãn 1.
 
-Bộ dữ liệu cuối có 52.522 khách hàng, trong đó 595 khách quay lại và 51.927 khách thuộc nhóm churn proxy. Tỷ lệ churn 98,87% cho thấy dữ liệu mất cân bằng rất mạnh.
+Feature chỉ sử dụng thông tin đã có trước snapshot. Những đơn chưa giao xong tại thời điểm snapshot không được tính.
 
-## Feature sử dụng
+## Dữ liệu sau khi tạo nhãn
 
-Mô hình sử dụng 16 feature số và hai feature phân loại. Các biến bao gồm RFM, số đơn và chi tiêu trong 30/90/180 ngày, giá trị đơn trung bình, thời gian gắn bó, khoảng cách giữa các lần mua, thông tin sản phẩm, phí vận chuyển, trả góp và khu vực của khách hàng.
+Bảng cuối có 5.920 mẫu customer-snapshot của 1.484 khách hàng. Trong đó có 299 mẫu quay lại và 5.621 mẫu churn proxy. Tỷ lệ churn là 94,95%.
 
-Những khách chỉ có một lần mua không thể tính khoảng cách trung bình giữa các đơn. Pipeline điền median học từ tập train và thêm chỉ báo missing. `customer_state` và `region_name` được mã hóa one-hot. Các bước này nằm trong pipeline để xử lý nhất quán khi dự đoán dữ liệu mới.
+So với cách đưa toàn bộ khách hàng vào một snapshot, tỷ lệ mẫu quay lại đã tăng từ 1,13% lên 5,05%. Dữ liệu vẫn mất cân bằng nhưng có nhiều trường hợp mua lại hơn để mô hình học.
 
-## Huấn luyện mô hình
+## Chia dữ liệu
 
-Dữ liệu được chia 80% train và 20% test, có giữ tỷ lệ hai lớp bằng `stratify` và sử dụng `random_state=42`. Mô hình chính là Random Forest với `class_weight="balanced"`.
+Dữ liệu được chia khoảng 80% train và 20% test bằng `StratifiedGroupKFold`. `customer_unique_id` được dùng làm group nên tất cả snapshot của một khách chỉ thuộc một tập.
 
-GridSearchCV 3-fold được thực hiện trên tập train để chọn tham số theo macro F1. Cấu hình cuối gồm 400 cây, không giới hạn độ sâu, `min_samples_leaf=5`, `max_features="sqrt"` và tiêu chí Gini. Ngưỡng xác suất 0,68 được chọn từ dự đoán out-of-fold trên tập train. Tập test không tham gia quá trình này.
+Tập train có 4.737 mẫu của 1.187 khách. Tập test có 1.183 mẫu của 297 khách. Không có khách hàng trùng giữa hai tập.
+
+## Pipeline và huấn luyện
+
+Pipeline gồm bước điền missing cho feature số, one-hot encoding cho feature phân loại và Random Forest. Việc đặt tiền xử lý trong Pipeline giúp mỗi fold chỉ học median và danh mục từ dữ liệu train.
+
+GridSearchCV ba fold được chạy trên tập train và tiếp tục chia theo mã khách hàng. Model được chọn bằng macro F1. Cấu hình cuối sử dụng 250 cây, độ sâu tối đa 8, `min_samples_leaf=5` và `class_weight="balanced"`.
+
+Ngưỡng xác suất 0,57 được chọn từ dự đoán out-of-fold của train. Tập test chỉ được dùng ở bước đánh giá cuối.
 
 ## Kết quả
 
-Trên 10.505 khách hàng test, mô hình đạt accuracy 0,9780, balanced accuracy 0,5195, macro F1 0,5191 và ROC-AUC 0,5529. F1 của lớp churn là 0,9889 nhưng F1 của lớp khách quay lại chỉ đạt 0,0494.
+Trên tập test, mô hình đạt accuracy 0,8791, balanced accuracy 0,6445, macro precision 0,5716, macro recall 0,6445, macro F1 0,5888 và ROC-AUC 0,7168. Weighted precision, weighted recall và weighted F1 lần lượt là 0,9250, 0,8791 và 0,8993.
 
-Mô hình dự đoán đúng 6 trong 119 khách quay lại và dự đoán đúng 10.268 trong 10.386 khách churn. Kết quả cho thấy accuracy cao đến từ lớp churn chiếm gần toàn bộ dữ liệu. Balanced accuracy và ROC-AUC phản ánh rõ hơn rằng khả năng phân biệt hai nhóm còn hạn chế.
+Đối với lớp khách quay lại, precision đạt 0,1783, recall đạt 0,3833 và F1 đạt 0,2434. Mô hình phát hiện đúng 23 trong 60 mẫu quay lại. Đối với lớp churn, F1 đạt 0,9343.
 
-Feature importance cao nhất thuộc về `recency`, `customer_tenure_days`, tỷ lệ phí vận chuyển trên giá trị sản phẩm, phí vận chuyển trung bình, `monetary` và giá trị đơn trung bình. Feature importance cho biết mức đóng góp trong Random Forest, không chứng minh quan hệ nhân quả.
+Trên tập train, accuracy đạt 0,9533, macro F1 đạt 0,8233 và weighted F1 đạt 0,9596. Kết quả train cao hơn test, đặc biệt ở lớp quay lại, nên model có dấu hiệu học tập train khá mạnh. Vì lớp churn chiếm đa số, weighted average cao không có nghĩa là model đã dự đoán tốt lớp quay lại; do đó báo cáo ưu tiên macro F1, balanced accuracy và chỉ số từng lớp.
+
+Feature có mức độ quan trọng cao gồm khoảng cách trung bình giữa các lần mua, tỷ lệ phí vận chuyển trên giá trị sản phẩm, tổng chi tiêu, giá trị đơn trung bình, chi tiêu 180 ngày và recency. Feature importance chỉ cho biết mức đóng góp trong Random Forest, không chứng minh quan hệ nhân quả.
 
 ## Tính năng hệ thống
 
-Model được lưu thành pipeline hoàn chỉnh. Script dự đoán nhận CSV có đủ feature, tự xử lý missing, mã hóa biến phân loại và xuất xác suất churn. Thành phần này có thể tích hợp vào website của nhóm dưới dạng chức năng tải file khách hàng và nhận danh sách nguy cơ.
+Model được lưu thành một pipeline hoàn chỉnh. Script dự đoán nhận file CSV feature, tự xử lý missing, mã hóa biến phân loại và xuất xác suất churn. Thành phần này có thể được website hoặc API của nhóm gọi lại sau này.
 
-Trong phạm vi phần học máy, sản phẩm bàn giao là model, script dự đoán hàng loạt, CSV gán nhãn, biểu đồ và báo cáo. Giao diện web không được tạo trong thư mục này.
+## Hạn chế
 
-## Hạn chế và hướng cải thiện
+Dữ liệu vẫn có ít mẫu quay lại, chỉ chiếm 5,05%. Precision lớp quay lại còn thấp nên danh sách dự đoán cần được xem là danh sách ưu tiên kiểm tra, không phải kết luận chắc chắn.
 
-Nhãn đang mô tả việc không mua lại trong thời gian quan sát, không khẳng định khách đã rời bỏ vĩnh viễn. Số khách quay lại quá ít và đa số khách chỉ có một giao dịch lịch sử, làm feature hành vi chưa đủ mạnh.
-
-Nếu có thêm dữ liệu, nhóm nên kéo dài lịch sử trước snapshot, tạo nhiều snapshot theo thời gian và bổ sung feature về đánh giá, khiếu nại, loại sản phẩm và hành vi mua lặp lại. Mô hình hiện tại nên được xem là thử nghiệm phục vụ đồ án, chưa dùng để tự động ra quyết định kinh doanh.
+Ngoài ra, nhiều snapshot của cùng một khách có thể tạo ra các mẫu gần nhau theo thời gian. Bài đã giảm rò rỉ bằng cách chia theo khách hàng, nhưng kết quả vẫn cần được kiểm tra thêm trên dữ liệu mới trước khi ứng dụng thực tế.

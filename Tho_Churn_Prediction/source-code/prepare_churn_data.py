@@ -6,8 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-SNAPSHOT_DATE = pd.Timestamp("2018-03-02 23:59:59")
-PREDICTION_END_DATE = pd.Timestamp("2018-08-29 23:59:59")
+PREDICTION_DAYS = 180
+ACTIVE_DAYS = 180
+MIN_ORDERS = 2
 
 REQUIRED_COLUMNS = [
     "order_id",
@@ -42,18 +43,31 @@ def load_order_master(input_path):
     for column in numeric_columns:
         df[column] = pd.to_numeric(df[column], errors="coerce")
 
-    df = df.drop_duplicates(subset="order_id", keep="last")
-    return df
+    return df.drop_duplicates(subset="order_id", keep="last")
 
 
-def build_customer_churn_table(
+def get_monthly_snapshots(orders):
+    delivered = orders[orders["order_status"].eq("delivered")]
+    first_date = delivered["order_purchase_timestamp"].min()
+    last_date = delivered["order_purchase_timestamp"].max()
+
+    first_allowed = first_date + pd.Timedelta(days=ACTIVE_DAYS)
+    last_allowed = last_date - pd.Timedelta(days=PREDICTION_DAYS)
+    first_month = first_allowed.to_period("M").to_timestamp() + pd.offsets.MonthBegin(1)
+    last_month = last_allowed.to_period("M").to_timestamp()
+
+    month_starts = pd.date_range(first_month, last_month, freq="MS")
+    return [date + pd.Timedelta(days=1) - pd.Timedelta(seconds=1) for date in month_starts]
+
+
+def build_customer_snapshot(
     orders,
-    snapshot_date=SNAPSHOT_DATE,
-    prediction_end_date=PREDICTION_END_DATE,
+    snapshot_date,
+    prediction_days=PREDICTION_DAYS,
+    active_days=ACTIVE_DAYS,
+    min_orders=MIN_ORDERS,
 ):
-    if prediction_end_date <= snapshot_date:
-        raise ValueError("Ngày kết thúc dự đoán phải sau ngày snapshot")
-
+    prediction_end = snapshot_date + pd.Timedelta(days=prediction_days)
     delivered = orders[orders["order_status"].eq("delivered")].copy()
     history = delivered[
         delivered["order_purchase_timestamp"].le(snapshot_date)
@@ -62,9 +76,8 @@ def build_customer_churn_table(
     history = history.dropna(
         subset=["customer_unique_id", "order_purchase_timestamp"]
     )
-
     if history.empty:
-        raise ValueError("Không có đơn lịch sử hợp lệ trước snapshot")
+        return pd.DataFrame()
 
     history = history.sort_values(
         ["customer_unique_id", "order_purchase_timestamp", "order_id"]
@@ -106,13 +119,13 @@ def build_customer_churn_table(
 
     for days in (30, 90, 180):
         window = history[history["days_from_snapshot"].lt(days)]
-        window_summary = window.groupby("customer_unique_id").agg(
+        summary = window.groupby("customer_unique_id").agg(
             **{
                 f"orders_last_{days}d": ("order_id", "nunique"),
                 f"spend_last_{days}d": ("total_products_value", "sum"),
             }
         )
-        customer = customer.join(window_summary, how="left")
+        customer = customer.join(summary, how="left")
 
     window_columns = [
         "orders_last_30d",
@@ -129,18 +142,22 @@ def build_customer_churn_table(
         .set_index("customer_unique_id")[["customer_state", "region_name"]]
     )
     customer = customer.join(latest_location, how="left")
+    customer = customer[
+        customer["frequency"].ge(min_orders) & customer["recency"].le(active_days)
+    ].copy()
+    if customer.empty:
+        return pd.DataFrame()
 
     future = delivered[
         delivered["order_purchase_timestamp"].gt(snapshot_date)
-        & delivered["order_purchase_timestamp"].le(prediction_end_date)
+        & delivered["order_purchase_timestamp"].le(prediction_end)
     ]
     returning_customers = set(future["customer_unique_id"].dropna())
     customer["churn_proxy_180d"] = (
         ~customer.index.to_series().isin(returning_customers)
     ).astype(int)
-
     customer["snapshot_date"] = snapshot_date.normalize()
-    customer["prediction_window_end"] = prediction_end_date.normalize()
+    customer["prediction_window_end"] = prediction_end.normalize()
 
     output_columns = [
         "snapshot_date",
@@ -166,20 +183,52 @@ def build_customer_churn_table(
         "churn_proxy_180d",
     ]
     customer = customer[output_columns].reset_index()
+    customer["sample_id"] = (
+        customer["customer_unique_id"]
+        + "_"
+        + customer["snapshot_date"].dt.strftime("%Y%m%d")
+    )
+    return customer
+
+
+def build_rolling_churn_table(orders, snapshot_dates=None):
+    if snapshot_dates is None:
+        snapshot_dates = get_monthly_snapshots(orders)
+
+    snapshots = []
+    for snapshot_date in snapshot_dates:
+        snapshot = build_customer_snapshot(orders, pd.Timestamp(snapshot_date))
+        if not snapshot.empty:
+            snapshots.append(snapshot)
+
+    if not snapshots:
+        raise ValueError("Không tạo được mẫu customer-snapshot hợp lệ")
+
+    result = pd.concat(snapshots, ignore_index=True)
+    first_columns = [
+        "sample_id",
+        "customer_unique_id",
+        "snapshot_date",
+        "prediction_window_end",
+    ]
+    remaining_columns = [column for column in result.columns if column not in first_columns]
+    result = result[first_columns + remaining_columns]
 
     round_columns = [
         column
-        for column in customer.select_dtypes(include="number").columns
+        for column in result.select_dtypes(include="number").columns
         if column != "churn_proxy_180d"
     ]
-    customer[round_columns] = customer[round_columns].round(4)
-    return customer.sort_values("customer_unique_id").reset_index(drop=True)
+    result[round_columns] = result[round_columns].round(4)
+    return result.sort_values(["snapshot_date", "customer_unique_id"]).reset_index(
+        drop=True
+    )
 
 
 def parse_args():
     project_dir = Path(__file__).resolve().parents[1]
     repo_dir = project_dir.parent
-    parser = ArgumentParser(description="Tạo bộ dữ liệu dự đoán churn 180 ngày")
+    parser = ArgumentParser(description="Tạo dữ liệu churn theo nhiều snapshot")
     parser.add_argument(
         "--input",
         type=Path,
@@ -205,14 +254,21 @@ def main():
         raise FileNotFoundError(f"Không tìm thấy file đầu vào: {args.input}")
 
     orders = load_order_master(args.input)
-    churn_table = build_customer_churn_table(orders)
+    churn_table = build_rolling_churn_table(orders)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    churn_table.to_csv(args.output, index=False, encoding="utf-8-sig")
+    churn_table.to_csv(
+        args.output,
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
 
     label_count = churn_table["churn_proxy_180d"].value_counts().sort_index()
     print("=" * 60)
-    print("TẠO DỮ LIỆU CHURN 180 NGÀY")
-    print(f"Số khách hàng: {len(churn_table):,}")
+    print("TẠO DỮ LIỆU CHURN THEO NHIỀU SNAPSHOT")
+    print(f"Số snapshot: {churn_table['snapshot_date'].nunique():,}")
+    print(f"Số khách hàng: {churn_table['customer_unique_id'].nunique():,}")
+    print(f"Số mẫu customer-snapshot: {len(churn_table):,}")
     print(f"Quay lại (0): {label_count.get(0, 0):,}")
     print(f"Churn proxy (1): {label_count.get(1, 0):,}")
     print(f"Tỷ lệ churn: {churn_table['churn_proxy_180d'].mean():.2%}")

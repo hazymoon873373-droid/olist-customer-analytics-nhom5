@@ -28,9 +28,8 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import (
     GridSearchCV,
-    StratifiedKFold,
+    StratifiedGroupKFold,
     cross_val_predict,
-    train_test_split,
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
@@ -117,7 +116,19 @@ def calculate_metrics(y_true, y_pred, churn_probability):
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
+        "macro_precision": float(
+            precision_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
+        "macro_recall": float(
+            recall_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
         "macro_f1": float(f1_score(y_true, y_pred, average="macro")),
+        "weighted_precision": float(
+            precision_score(y_true, y_pred, average="weighted", zero_division=0)
+        ),
+        "weighted_recall": float(
+            recall_score(y_true, y_pred, average="weighted", zero_division=0)
+        ),
         "weighted_f1": float(f1_score(y_true, y_pred, average="weighted")),
         "return_precision": float(
             precision_score(y_true, y_pred, pos_label=0, zero_division=0)
@@ -184,8 +195,8 @@ def save_charts(
         color=["#2A9D8F", "#E76F51"],
     )
     ax.bar_label(bars, fmt="{:,.0f}")
-    ax.set_title("Phân bố nhãn churn 180 ngày")
-    ax.set_ylabel("Số khách hàng")
+    ax.set_title("Phân bố nhãn churn theo customer-snapshot")
+    ax.set_ylabel("Số mẫu")
     fig.tight_layout()
     fig.savefig(chart_dir / "01_class_distribution.png", dpi=160)
     plt.close(fig)
@@ -306,24 +317,43 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     data = pd.read_csv(args.input)
-    missing_columns = set(MODEL_FEATURES + [TARGET_COLUMN, "customer_unique_id"]) - set(
-        data.columns
-    )
+    required_columns = MODEL_FEATURES + [
+        TARGET_COLUMN,
+        "sample_id",
+        "customer_unique_id",
+        "snapshot_date",
+        "prediction_window_end",
+    ]
+    missing_columns = set(required_columns) - set(data.columns)
     if missing_columns:
         raise ValueError(f"Thiếu cột: {sorted(missing_columns)}")
 
-    train_data, test_data = train_test_split(
-        data,
-        test_size=0.2,
+    split_cv = StratifiedGroupKFold(
+        n_splits=5,
+        shuffle=True,
         random_state=RANDOM_STATE,
-        stratify=data[TARGET_COLUMN],
     )
+    train_index, test_index = next(
+        split_cv.split(
+            data[MODEL_FEATURES],
+            data[TARGET_COLUMN],
+            groups=data["customer_unique_id"],
+        )
+    )
+    train_data = data.iloc[train_index].copy()
+    test_data = data.iloc[test_index].copy()
     X_train = train_data[MODEL_FEATURES]
     y_train = train_data[TARGET_COLUMN].astype(int)
     X_test = test_data[MODEL_FEATURES]
     y_test = test_data[TARGET_COLUMN].astype(int)
+    train_groups = train_data["customer_unique_id"]
+    test_groups = test_data["customer_unique_id"]
 
-    cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=RANDOM_STATE)
+    customer_overlap = set(train_groups) & set(test_groups)
+    if customer_overlap:
+        raise ValueError("Một khách hàng đang xuất hiện ở cả train và test")
+
+    cv = StratifiedGroupKFold(n_splits=3, shuffle=True, random_state=RANDOM_STATE)
     scoring = {
         "macro_f1": "f1_macro",
         "balanced_accuracy": "balanced_accuracy",
@@ -343,7 +373,11 @@ def main():
     print("=" * 60)
     print("HUẤN LUYỆN RANDOM FOREST")
     print(f"Train: {len(train_data):,} | Test: {len(test_data):,}")
-    print("Đang chạy GridSearchCV 3-fold trên tập train...")
+    print(
+        f"Khách train: {train_groups.nunique():,} | "
+        f"Khách test: {test_groups.nunique():,}"
+    )
+    print("Đang chạy GridSearchCV 3-fold theo customer trên tập train...")
 
     tracemalloc.start()
     start_time = time.perf_counter()
@@ -357,13 +391,14 @@ def main():
         return_train_score=False,
         verbose=1,
     )
-    grid_search.fit(X_train, y_train)
+    grid_search.fit(X_train, y_train, groups=train_groups)
 
     best_pipeline = grid_search.best_estimator_
     oof_probability = cross_val_predict(
         best_pipeline,
         X_train,
         y_train,
+        groups=train_groups,
         cv=cv,
         method="predict_proba",
         n_jobs=1,
@@ -371,12 +406,15 @@ def main():
     threshold, oof_macro_f1 = select_threshold(y_train, oof_probability)
 
     best_pipeline.fit(X_train, y_train)
+    train_probability = best_pipeline.predict_proba(X_train)[:, 1]
+    train_prediction = (train_probability >= threshold).astype(int)
     test_probability = best_pipeline.predict_proba(X_test)[:, 1]
     test_prediction = (test_probability >= threshold).astype(int)
     elapsed_seconds = time.perf_counter() - start_time
     _, peak_memory = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
+    train_metrics = calculate_metrics(y_train, train_prediction, train_probability)
     test_metrics = calculate_metrics(y_test, test_prediction, test_probability)
     baseline_prediction = np.ones(len(y_test), dtype=int)
     baseline_metrics = calculate_metrics(y_test, baseline_prediction, test_probability)
@@ -389,6 +427,14 @@ def main():
         lineterminator="\n",
     )
 
+    train_report_table = make_classification_report_table(y_train, train_prediction)
+    train_report_table.to_csv(
+        output_dir / "classification_report_train.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
     matrix = confusion_matrix(y_test, test_prediction, labels=[0, 1])
     matrix_table = pd.DataFrame(
         matrix,
@@ -396,7 +442,52 @@ def main():
         columns=["predicted_return_0", "predicted_churn_1"],
     )
     matrix_table.to_csv(
-        output_dir / "confusion_matrix.csv", encoding="utf-8-sig"
+        output_dir / "confusion_matrix.csv",
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
+    train_matrix = confusion_matrix(y_train, train_prediction, labels=[0, 1])
+    train_matrix_table = pd.DataFrame(
+        train_matrix,
+        index=["actual_return_0", "actual_churn_1"],
+        columns=["predicted_return_0", "predicted_churn_1"],
+    )
+    train_matrix_table.to_csv(
+        output_dir / "confusion_matrix_train.csv",
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
+    metric_columns = [
+        "accuracy",
+        "balanced_accuracy",
+        "macro_precision",
+        "macro_recall",
+        "macro_f1",
+        "weighted_precision",
+        "weighted_recall",
+        "weighted_f1",
+        "return_precision",
+        "return_recall",
+        "return_f1",
+        "churn_precision",
+        "churn_recall",
+        "churn_f1",
+        "roc_auc",
+        "return_average_precision",
+    ]
+    metrics_summary = pd.DataFrame(
+        [
+            {"dataset": "train", **train_metrics},
+            {"dataset": "test", **test_metrics},
+        ]
+    )[["dataset"] + metric_columns]
+    metrics_summary.to_csv(
+        output_dir / "performance_metrics.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
     )
 
     feature_names = best_pipeline.named_steps["preprocessor"].get_feature_names_out()
@@ -405,7 +496,10 @@ def main():
         {"feature": feature_names, "importance": importance_values}
     ).sort_values("importance", ascending=False)
     feature_importance.to_csv(
-        output_dir / "feature_importance.csv", index=False, encoding="utf-8-sig"
+        output_dir / "feature_importance.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
     )
 
     cv_results = pd.DataFrame(grid_search.cv_results_)
@@ -424,15 +518,39 @@ def main():
         output_dir / "cross_validation_results.csv",
         index=False,
         encoding="utf-8-sig",
+        lineterminator="\n",
     )
 
-    predictions = test_data[["customer_unique_id", TARGET_COLUMN]].copy()
+    predictions = test_data[
+        [
+            "sample_id",
+            "customer_unique_id",
+            "snapshot_date",
+            "prediction_window_end",
+            TARGET_COLUMN,
+        ]
+    ].copy()
     predictions["churn_probability"] = test_probability
     predictions["predicted_churn"] = test_prediction
     predictions["prediction_threshold"] = threshold
     predictions = predictions.rename(columns={TARGET_COLUMN: "actual_churn"})
     predictions.to_csv(
-        output_dir / "test_predictions.csv", index=False, encoding="utf-8-sig"
+        output_dir / "test_predictions.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
+    )
+
+    split_table = data[
+        ["sample_id", "customer_unique_id", "snapshot_date", TARGET_COLUMN]
+    ].copy()
+    split_table["split"] = "train"
+    split_table.loc[test_index, "split"] = "test"
+    split_table.to_csv(
+        output_dir / "train_test_split.csv",
+        index=False,
+        encoding="utf-8-sig",
+        lineterminator="\n",
     )
 
     best_params = {
@@ -441,17 +559,29 @@ def main():
     metrics = {
         "model": "RandomForestClassifier",
         "label_definition": "1 = không có đơn delivered trong 180 ngày sau snapshot; 0 = có quay lại mua",
-        "snapshot_date": "2018-03-02",
-        "prediction_window_end": "2018-08-29",
+        "sample_definition": "Khách có ít nhất 2 đơn delivered và có mua trong 180 ngày trước snapshot",
+        "snapshot_method": "12 snapshot theo tháng",
+        "first_snapshot": str(pd.to_datetime(data["snapshot_date"]).min().date()),
+        "last_snapshot": str(pd.to_datetime(data["snapshot_date"]).max().date()),
+        "snapshot_count": int(data["snapshot_date"].nunique()),
         "random_state": RANDOM_STATE,
+        "dataset_rows": int(len(data)),
+        "dataset_customers": int(data["customer_unique_id"].nunique()),
+        "return_rows": int(data[TARGET_COLUMN].eq(0).sum()),
+        "churn_rows": int(data[TARGET_COLUMN].eq(1).sum()),
         "train_rows": int(len(train_data)),
         "test_rows": int(len(test_data)),
+        "train_customers": int(train_groups.nunique()),
+        "test_customers": int(test_groups.nunique()),
+        "customer_overlap": int(len(customer_overlap)),
+        "split_method": "StratifiedGroupKFold 5-fold, dùng 1 fold làm test 20%",
         "train_churn_rate": float(y_train.mean()),
         "test_churn_rate": float(y_test.mean()),
         "best_parameters": best_params,
         "cv_best_macro_f1_at_default_threshold": float(grid_search.best_score_),
         "selected_threshold": threshold,
         "oof_macro_f1_at_selected_threshold": oof_macro_f1,
+        "train_metrics": train_metrics,
         "test_metrics": test_metrics,
         "all_churn_baseline": {
             key: baseline_metrics[key]
@@ -460,7 +590,9 @@ def main():
         "training_seconds": float(elapsed_seconds),
         "peak_memory_mb": float(peak_memory / (1024**2)),
     }
-    with (output_dir / "model_metrics.json").open("w", encoding="utf-8") as file:
+    with (output_dir / "model_metrics.json").open(
+        "w", encoding="utf-8", newline="\n"
+    ) as file:
         json.dump(metrics, file, ensure_ascii=False, indent=2)
 
     model_bundle = {
@@ -470,8 +602,9 @@ def main():
         "numeric_features": NUMERIC_FEATURES,
         "categorical_features": CATEGORICAL_FEATURES,
         "label_mapping": {0: "quay_lai", 1: "churn_proxy_180d"},
-        "snapshot_date": "2018-03-02",
-        "prediction_window_end": "2018-08-29",
+        "sample_definition": "Khách có ít nhất 2 đơn và active trong 180 ngày trước snapshot",
+        "snapshot_method": "monthly_rolling_snapshot",
+        "prediction_days": 180,
     }
     joblib.dump(
         model_bundle,
@@ -492,15 +625,51 @@ def main():
         "KẾT QUẢ RANDOM FOREST - CHURN PROXY 180 NGÀY",
         "=" * 58,
         f"Train: {len(train_data):,} | Test: {len(test_data):,}",
+        f"Khách train: {train_groups.nunique():,} | Khách test: {test_groups.nunique():,}",
+        f"Khách trùng giữa hai tập: {len(customer_overlap)}",
         f"Ngưỡng dự đoán chọn trên train: {threshold:.2f}",
+        "",
+        "KẾT QUẢ TRÊN TẬP TRAIN",
+        f"Accuracy: {train_metrics['accuracy']:.4f}",
+        f"Balanced accuracy: {train_metrics['balanced_accuracy']:.4f}",
+        f"Macro precision: {train_metrics['macro_precision']:.4f}",
+        f"Macro recall: {train_metrics['macro_recall']:.4f}",
+        f"Macro F1: {train_metrics['macro_f1']:.4f}",
+        f"Weighted precision: {train_metrics['weighted_precision']:.4f}",
+        f"Weighted recall: {train_metrics['weighted_recall']:.4f}",
+        f"Weighted F1: {train_metrics['weighted_f1']:.4f}",
+        f"ROC-AUC: {train_metrics['roc_auc']:.4f}",
+        "",
+        classification_report(
+            y_train,
+            train_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        ),
+        "KẾT QUẢ TRÊN TẬP TEST",
         f"Accuracy: {test_metrics['accuracy']:.4f}",
         f"Balanced accuracy: {test_metrics['balanced_accuracy']:.4f}",
+        f"Macro precision: {test_metrics['macro_precision']:.4f}",
+        f"Macro recall: {test_metrics['macro_recall']:.4f}",
         f"Macro F1: {test_metrics['macro_f1']:.4f}",
+        f"Weighted precision: {test_metrics['weighted_precision']:.4f}",
+        f"Weighted recall: {test_metrics['weighted_recall']:.4f}",
+        f"Weighted F1: {test_metrics['weighted_f1']:.4f}",
         f"F1 lớp quay lại (0): {test_metrics['return_f1']:.4f}",
         f"F1 lớp churn (1): {test_metrics['churn_f1']:.4f}",
         f"ROC-AUC: {test_metrics['roc_auc']:.4f}",
         f"Average precision lớp quay lại: {test_metrics['return_average_precision']:.4f}",
         "",
+        classification_report(
+            y_test,
+            test_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        ),
         "Confusion matrix [actual x predicted]:",
         matrix_table.to_string(),
         "",
@@ -508,19 +677,46 @@ def main():
         json.dumps(best_params, ensure_ascii=False, indent=2),
     ]
     (output_dir / "Ketqua_RandomForest_Churn.txt").write_text(
-        "\n".join(result_lines), encoding="utf-8"
+        "\n".join(result_lines), encoding="utf-8", newline="\n"
     )
 
     print("\nTHAM SỐ TỐT NHẤT")
     print(best_params)
+    print("\nKẾT QUẢ TRÊN TẬP TRAIN")
+    print(f"Accuracy: {train_metrics['accuracy']:.4f}")
+    print(f"Balanced accuracy: {train_metrics['balanced_accuracy']:.4f}")
+    print(f"Macro F1: {train_metrics['macro_f1']:.4f}")
+    print(f"Weighted F1: {train_metrics['weighted_f1']:.4f}")
+    print(f"ROC-AUC: {train_metrics['roc_auc']:.4f}")
+    print(
+        classification_report(
+            y_train,
+            train_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        )
+    )
     print("\nKẾT QUẢ TRÊN TẬP TEST")
     print(f"Ngưỡng dự đoán: {threshold:.2f}")
     print(f"Accuracy: {test_metrics['accuracy']:.4f}")
     print(f"Balanced accuracy: {test_metrics['balanced_accuracy']:.4f}")
     print(f"Macro F1: {test_metrics['macro_f1']:.4f}")
+    print(f"Weighted F1: {test_metrics['weighted_f1']:.4f}")
     print(f"F1 lớp quay lại: {test_metrics['return_f1']:.4f}")
     print(f"F1 lớp churn: {test_metrics['churn_f1']:.4f}")
     print(f"ROC-AUC: {test_metrics['roc_auc']:.4f}")
+    print(
+        classification_report(
+            y_test,
+            test_prediction,
+            labels=[0, 1],
+            target_names=["Quay_lai_0", "Churn_1"],
+            zero_division=0,
+            digits=4,
+        )
+    )
     print(f"Thời gian: {elapsed_seconds:.2f} giây")
     print(f"Đã lưu kết quả tại: {output_dir}")
 

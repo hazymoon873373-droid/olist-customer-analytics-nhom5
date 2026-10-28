@@ -1,23 +1,30 @@
 # Dự đoán churn proxy 180 ngày bằng Random Forest
 
-Phần này dự đoán khả năng khách hàng không quay lại mua trong 180 ngày sau ngày snapshot. Mô hình chính là `RandomForestClassifier` với `class_weight="balanced"`.
+Phần này dự đoán khách hàng đang hoạt động có ngừng mua trong 180 ngày tiếp theo hay không. Mô hình sử dụng `RandomForestClassifier` với `class_weight="balanced"`.
 
 - Người thực hiện: Bui Minh Tho
 - Email: buitho5112006@gmail.com
 - Nhánh Git: `codex/tho-machine-learning`
 
-## Cách tạo nhãn
+## Cách tạo mẫu và nhãn
 
-- Snapshot `T0`: hết ngày 02/03/2018.
-- Cửa sổ nhãn: từ 03/03/2018 đến hết 29/08/2018.
-- `churn_proxy_180d = 1`: khách không có đơn `delivered` trong cửa sổ nhãn.
-- `churn_proxy_180d = 0`: khách có ít nhất một đơn `delivered` trong cửa sổ nhãn.
+Dữ liệu được tạo theo 12 snapshot hàng tháng, từ 01/04/2017 đến 01/03/2018.
 
-Feature chỉ được tính từ đơn đã giao thành công trước hoặc bằng `T0`. Đơn mua trước `T0` nhưng giao sau `T0` không được dùng để tránh lấy thông tin tương lai.
+Một khách hàng được đưa vào snapshot khi:
+
+- Đã có ít nhất hai đơn `delivered` trước snapshot.
+- Có mua hàng trong 180 ngày gần nhất trước snapshot.
+
+Nhãn được tạo như sau:
+
+- `churn_proxy_180d = 1`: không có đơn `delivered` trong 180 ngày sau snapshot.
+- `churn_proxy_180d = 0`: có ít nhất một đơn `delivered` trong 180 ngày sau snapshot.
+
+Mỗi dòng được xác định bằng `sample_id`, gồm mã khách hàng và ngày snapshot. Feature chỉ dùng dữ liệu đã có trước snapshot.
 
 ## Chạy trên máy khác
 
-Yêu cầu Python 3.11 trở lên. Sau khi clone GitHub:
+Yêu cầu Python 3.11 trở lên:
 
 ```powershell
 git clone https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5.git
@@ -40,24 +47,62 @@ Chạy lại toàn bộ:
 python -B Tho_Churn_Prediction/source-code/run_all.py
 ```
 
-Quá trình huấn luyện GridSearchCV mất khoảng 5 đến 6 phút trên máy đã chạy bài này.
-
-Chạy riêng từng bước:
+Hoặc chạy riêng từng bước:
 
 ```powershell
 python -B Tho_Churn_Prediction/source-code/prepare_churn_data.py
 python -B Tho_Churn_Prediction/source-code/train_churn_model.py
 ```
 
-Chạy kiểm tra:
+Chạy test:
 
 ```powershell
 python -B -m unittest discover -s Tho_Churn_Prediction/tests -v
 ```
 
-## Dự đoán cho file mới
+## Cách chia train và test
 
-File mới cần có đủ 18 feature ghi trong `reports/noi_dung_bao_cao.md`.
+Toàn bộ bảng nhãn được tạo trước. Sau đó dữ liệu được chia khoảng 80% train và 20% test bằng `StratifiedGroupKFold`.
+
+`customer_unique_id` được dùng làm group nên một khách hàng không thể xuất hiện đồng thời ở train và test. Kết quả chia:
+
+- Train: 4.737 mẫu của 1.187 khách.
+- Test: 1.183 mẫu của 297 khách.
+- Số khách trùng giữa hai tập: 0.
+
+GridSearchCV ba fold cũng chia theo `customer_unique_id`. Imputation và one-hot encoding đều nằm trong Pipeline và chỉ học từ phần train của từng fold.
+
+## Kết quả chính
+
+Bảng dữ liệu gồm 5.920 mẫu customer-snapshot của 1.484 khách hàng:
+
+- Quay lại, nhãn 0: 299 mẫu.
+- Churn proxy, nhãn 1: 5.621 mẫu.
+- Tỷ lệ churn: 94,95%.
+
+| Chỉ số trên tập test | Kết quả |
+|---|---:|
+| Accuracy | 0,8791 |
+| Balanced accuracy | 0,6445 |
+| Macro precision | 0,5716 |
+| Macro recall | 0,6445 |
+| Macro F1 | 0,5888 |
+| Weighted precision | 0,9250 |
+| Weighted recall | 0,8791 |
+| Weighted F1 | 0,8993 |
+| Precision lớp quay lại | 0,1783 |
+| Recall lớp quay lại | 0,3833 |
+| F1 lớp quay lại | 0,2434 |
+| Precision lớp churn | 0,9649 |
+| Recall lớp churn | 0,9056 |
+| F1 lớp churn | 0,9343 |
+| ROC-AUC | 0,7168 |
+
+Trên train, weighted F1 đạt 0,9596 nhưng trên test còn 0,8993. Khoảng chênh này cho thấy model học tập train khá mạnh. Vì dữ liệu mất cân bằng, cần đọc balanced accuracy, macro F1 và kết quả từng lớp thay vì chỉ nhìn accuracy hoặc weighted average.
+
+## Dự đoán file mới
+
+File đầu vào cần có đủ 18 feature ghi trong báo cáo:
 
 ```powershell
 python -B Tho_Churn_Prediction/source-code/predict_churn.py `
@@ -65,39 +110,20 @@ python -B Tho_Churn_Prediction/source-code/predict_churn.py `
   --output "duong-dan\ket_qua_du_doan.csv"
 ```
 
-Kết quả có thêm ba cột:
-
-- `churn_probability`
-- `predicted_churn`
-- `prediction_threshold`
-
-## Kết quả chính
-
-Tập dữ liệu có 52.522 khách hàng. Có 595 khách quay lại và 51.927 khách thuộc nhãn churn proxy. Tập train chiếm 80%, tập test chiếm 20% và được chia có `stratify`.
-
-| Chỉ số trên tập test | Kết quả |
-|---|---:|
-| Accuracy | 0,9780 |
-| Balanced accuracy | 0,5195 |
-| Macro F1 | 0,5191 |
-| F1 lớp quay lại | 0,0494 |
-| F1 lớp churn | 0,9889 |
-| ROC-AUC | 0,5529 |
-
-Accuracy cao chủ yếu do 98,87% quan sát mang nhãn churn. Khả năng tách hai lớp còn yếu nên không nên dùng mô hình này để tự động quyết định giữ chân khách hàng. Kết quả phù hợp để trình bày quy trình supervised learning và làm cơ sở cải thiện khi có thêm lịch sử mua lặp lại.
+Kết quả có thêm xác suất churn, nhãn dự đoán và ngưỡng đã chọn trên train.
 
 ## Cấu trúc thư mục
 
 ```text
 Tho_Churn_Prediction/
-├── data/              # Bảng feature và nhãn theo khách hàng
-├── models/            # Pipeline tiền xử lý và Random Forest
-├── outputs/           # CSV kết quả, biểu đồ, metric và Excel tổng hợp
-├── reports/           # Các bước thực hiện và nội dung báo cáo
+├── data/              # Bảng customer-snapshot, feature và nhãn
+├── models/            # Pipeline và Random Forest
+├── outputs/           # CSV kết quả, biểu đồ, metric và Excel
+├── reports/           # Quy trình và nội dung báo cáo
 ├── source-code/       # Code tạo dữ liệu, train và dự đoán
-├── tests/             # Test công thức và model đã lưu
+├── tests/             # Test công thức, chia tập và model
 ├── DANH_SACH_FILE.md
 └── requirements.txt
 ```
 
-Model lưu chung bước điền giá trị thiếu, one-hot encoding, Random Forest và ngưỡng dự đoán. Không cần xử lý lại feature bằng tay khi gọi `predict_churn.py`.
+Model lưu chung bước điền missing, one-hot encoding, Random Forest và ngưỡng 0,57. Không cần xử lý lại feature bằng tay khi gọi `predict_churn.py`.

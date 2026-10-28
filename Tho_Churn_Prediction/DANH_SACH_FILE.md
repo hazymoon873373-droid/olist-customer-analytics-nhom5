@@ -9,15 +9,19 @@
 
 ## Dữ liệu và model
 
-- `data/customer_churn_180d.csv`: một dòng cho mỗi khách hàng, gồm feature và nhãn.
+- `data/customer_churn_180d.csv`: một dòng cho mỗi customer-snapshot, gồm feature và nhãn.
 - `models/random_forest_churn_pipeline.joblib`: pipeline tiền xử lý, model và ngưỡng dự đoán.
 
 ## Kết quả
 
 - `outputs/test_predictions.csv`: nhãn thật, xác suất và nhãn dự đoán trên tập test.
+- `outputs/train_test_split.csv`: danh sách sample thuộc train hoặc test để kiểm tra trùng khách.
 - `outputs/model_metrics.json`: tham số và metric chính.
 - `outputs/classification_report.csv`: precision, recall và F1 theo lớp.
+- `outputs/classification_report_train.csv`: precision, recall và F1 trên tập train.
 - `outputs/confusion_matrix.csv`: confusion matrix.
+- `outputs/confusion_matrix_train.csv`: confusion matrix trên tập train.
+- `outputs/performance_metrics.csv`: bảng so sánh đầy đủ metric train và test.
 - `outputs/feature_importance.csv`: mức độ quan trọng của feature sau tiền xử lý.
 - `outputs/cross_validation_results.csv`: kết quả tám cấu hình Random Forest.
 - `outputs/Ketqua_RandomForest_Churn.txt`: kết quả dạng văn bản.
