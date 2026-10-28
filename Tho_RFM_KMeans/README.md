@@ -9,6 +9,8 @@ Phần này phân khúc khách hàng Olist bằng ba biến Recency, Frequency v
 - Recency: số ngày từ lần mua cuối đến ngày 30/08/2018.
 - Frequency: số đơn hàng khác nhau của khách hàng.
 - Monetary: tổng `total_products_value`, không cộng phí vận chuyển.
+- Dùng toàn bộ lịch sử đơn delivered đến hết ngày 30/08/2018.
+- Không dùng `valid_delay_kpi` để loại đơn khỏi bảng RFM.
 
 Sau khi lọc còn 93.358 khách hàng. Ba biến RFM được biến đổi `log1p`, chuẩn hóa bằng `StandardScaler` rồi mới đưa vào K-Means.
 

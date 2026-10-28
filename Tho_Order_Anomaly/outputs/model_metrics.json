@@ -1,0 +1,14 @@
+{
+  "algorithm": "Isolation Forest",
+  "data_scope": "delivered orders",
+  "total_orders": 96478,
+  "anomaly_orders": 965,
+  "normal_orders": 95513,
+  "anomaly_rate": 0.01000228031261013,
+  "contamination": 0.01,
+  "random_state": 42,
+  "n_estimators": 200,
+  "max_samples": 4096,
+  "seed_7_42_jaccard": 0.8020541549953315,
+  "score_note": "anomaly_score càng cao thì đơn hàng càng bất thường"
+}

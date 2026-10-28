@@ -6,7 +6,7 @@ Mục tiêu của phần này là chia khách hàng Olist thành các nhóm có 
 
 ## 2. Xây dựng dữ liệu RFM
 
-Dữ liệu được lấy từ bảng order master. Chỉ những đơn có trạng thái `delivered` được sử dụng vì đây là các giao dịch đã hoàn thành. Sau bước kiểm tra dữ liệu còn 93.358 khách hàng.
+Dữ liệu được lấy từ bảng order master. Nhóm dùng toàn bộ lịch sử đơn `delivered` đến hết ngày 30/08/2018 vì đây là các giao dịch đã hoàn thành. `valid_delay_kpi` không được dùng để loại đơn vì cờ này chỉ kiểm tra dữ liệu phục vụ KPI giao hàng. Sau bước kiểm tra dữ liệu còn 93.358 khách hàng.
 
 Ba biến được tính như sau:
 

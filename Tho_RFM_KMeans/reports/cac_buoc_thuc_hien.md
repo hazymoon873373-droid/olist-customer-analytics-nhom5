@@ -12,7 +12,7 @@ File sử dụng là `olist_powerbi_orders_master.csv`, gồm 99.441 đơn hàng
 
 ## 2. Tạo lại bảng RFM
 
-Lọc đơn `delivered`, loại dòng thiếu khóa khách hàng, thời gian mua hoặc giá trị sản phẩm. Nếu có một `order_id` xuất hiện nhiều lần thì chỉ giữ một dòng để tránh cộng tiền hai lần.
+Lọc đơn `delivered` trong toàn bộ lịch sử đến hết ngày 30/08/2018, loại dòng thiếu khóa khách hàng, thời gian mua hoặc giá trị sản phẩm. Nếu có một `order_id` xuất hiện nhiều lần thì chỉ giữ một dòng để tránh cộng tiền hai lần. Không dùng `valid_delay_kpi` để lọc RFM vì cờ này chỉ phục vụ KPI giao hàng.
 
 Công thức:
 
@@ -22,7 +22,7 @@ Frequency = số order_id khác nhau
 Monetary  = tổng total_products_value
 ```
 
-Ngày mua lớn nhất của đơn delivered là 29/08/2018 nên ngày tham chiếu được đặt là 30/08/2018. Kết quả có 93.358 khách hàng.
+Ngày tham chiếu được cố định là 30/08/2018 để phần RFM của Tâm và phần K-Means của Thọ dùng cùng cách tính. Ngày mua lớn nhất trong dữ liệu hiện có là 29/08/2018. Kết quả có 93.358 khách hàng.
 
 ## 3. Tiền xử lý trước K-Means
 

@@ -28,7 +28,7 @@ class PrepareRFMTests(unittest.TestCase):
             ],
         )
 
-        rfm, reference_date = build_rfm(orders)
+        rfm, reference_date = build_rfm(orders, reference_date="2024-01-04")
         customer_1 = rfm.set_index("customer_unique_id").loc["c1"]
 
         self.assertEqual(reference_date, pd.Timestamp("2024-01-04"))
@@ -52,9 +52,32 @@ class PrepareRFMTests(unittest.TestCase):
             ],
         )
 
-        rfm, _ = build_rfm(orders)
+        rfm, _ = build_rfm(orders, reference_date="2024-01-03")
         self.assertEqual(rfm.loc[0, "frequency"], 2)
         self.assertEqual(rfm.loc[0, "monetary"], 30.0)
+
+    def test_fixed_date_and_valid_delay_flag_is_not_used(self):
+        orders = pd.DataFrame(
+            [
+                ["o1", "c1", "delivered", "2018-08-29", 100.0, False],
+                ["o2", "c1", "delivered", "2018-08-31", 200.0, True],
+            ],
+            columns=[
+                "order_id",
+                "customer_unique_id",
+                "order_status",
+                "order_purchase_timestamp",
+                "total_products_value",
+                "valid_delay_kpi",
+            ],
+        )
+
+        rfm, reference_date = build_rfm(orders)
+
+        self.assertEqual(reference_date, pd.Timestamp("2018-08-30"))
+        self.assertEqual(rfm.loc[0, "recency"], 1)
+        self.assertEqual(rfm.loc[0, "frequency"], 1)
+        self.assertEqual(rfm.loc[0, "monetary"], 100.0)
 
 
 if __name__ == "__main__":

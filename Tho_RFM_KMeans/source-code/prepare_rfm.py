@@ -21,6 +21,8 @@ REQUIRED_COLUMNS = [
     "total_products_value",
 ]
 
+RFM_REFERENCE_DATE = pd.Timestamp("2018-08-30")
+
 
 def read_order_master(input_file):
     df = pd.read_csv(input_file, low_memory=False)
@@ -53,7 +55,8 @@ def add_rfm_scores(rfm):
     return rfm
 
 
-def build_rfm(order_master):
+def build_rfm(order_master, reference_date=RFM_REFERENCE_DATE):
+    reference_date = pd.Timestamp(reference_date).normalize()
     df = order_master[REQUIRED_COLUMNS].copy()
     df = df[df["order_status"].eq("delivered")]
 
@@ -72,12 +75,14 @@ def build_rfm(order_master):
             "total_products_value",
         ]
     )
+    df = df[
+        df["order_purchase_timestamp"]
+        < reference_date + pd.Timedelta(days=1)
+    ]
     if df.empty:
         raise ValueError("Không còn đơn delivered hợp lệ để tính RFM")
 
     df = df.sort_values("order_purchase_timestamp").drop_duplicates("order_id", keep="last")
-
-    reference_date = df["order_purchase_timestamp"].max().normalize() + pd.Timedelta(days=1)
 
     rfm = (
         df.groupby("customer_unique_id", as_index=False)
