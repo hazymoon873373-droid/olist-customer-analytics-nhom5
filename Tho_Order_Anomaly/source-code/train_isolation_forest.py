@@ -269,6 +269,15 @@ def main():
     missing_columns = [column for column in MODEL_FEATURES if column not in data]
     if missing_columns:
         raise ValueError(f"Thiếu feature: {missing_columns}")
+    if "valid_delay_kpi" not in data:
+        raise ValueError("Dữ liệu thiếu valid_delay_kpi; hãy chạy lại bước chuẩn bị")
+    valid = data["valid_delay_kpi"].astype(str).str.lower().eq("true")
+    if data.loc[~valid, ["delivery_days", "late_days"]].notna().any().any():
+        raise ValueError("Đơn không hợp lệ vẫn có feature thời gian giao hàng")
+    metadata_file = args.input.parent / "source_metadata.json"
+    if not metadata_file.exists():
+        raise ValueError("Thiếu source_metadata.json; hãy chạy lại bước chuẩn bị")
+    source_metadata = json.loads(metadata_file.read_text(encoding="utf-8"))
 
     pipeline = build_pipeline()
     prediction = pipeline.fit_predict(data[MODEL_FEATURES])
@@ -312,6 +321,9 @@ def main():
     metrics = {
         "algorithm": "Isolation Forest",
         "data_scope": "delivered orders",
+        "model_version": "isolation_forest_v2_provisional",
+        "source_metadata": source_metadata,
+        "invalid_delay_kpi_orders": int((~valid).sum()),
         "total_orders": int(len(scored_data)),
         "anomaly_orders": int(len(anomalies)),
         "normal_orders": int(len(scored_data) - len(anomalies)),
@@ -332,6 +344,8 @@ def main():
         "reason_thresholds": thresholds,
         "contamination": CONTAMINATION,
         "algorithm": "Isolation Forest",
+        "model_version": "isolation_forest_v2_provisional",
+        "source_metadata": source_metadata,
     }
     joblib.dump(bundle, model_dir / "isolation_forest_order_pipeline.joblib")
     save_charts(scored_data, profile, reason_count, chart_dir)

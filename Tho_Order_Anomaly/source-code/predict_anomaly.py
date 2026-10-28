@@ -36,6 +36,10 @@ def main():
     missing_columns = [column for column in features if column not in data]
     if missing_columns:
         raise ValueError(f"Thiếu feature: {missing_columns}")
+    if "valid_delay_kpi" not in data:
+        raise ValueError("Thiếu cờ valid_delay_kpi; hãy chuẩn bị dữ liệu từ bảng đơn sạch")
+    valid = data["valid_delay_kpi"].astype(str).str.lower().eq("true")
+    data.loc[~valid, ["delivery_days", "late_days"]] = float("nan")
 
     pipeline = bundle["pipeline"]
     prediction = pipeline.predict(data[features])

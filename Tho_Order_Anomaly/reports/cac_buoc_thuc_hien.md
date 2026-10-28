@@ -11,6 +11,9 @@ và có thể xuất điểm bất thường cho từng đơn. Phần này khôn
 ## 2. Chuẩn bị dữ liệu
 
 Nguồn dữ liệu là `olist_powerbi_orders_master.csv` đã được nhóm tổng hợp trước đó.
+Ngày giao và các cờ chất lượng được đối chiếu với `olist_orders_clean.csv` theo `order_id`.
+1.381 đơn không đạt `valid_delay_kpi` được giữ nhưng không dùng giá trị thời gian giao hàng.
+Master và bảng sạch đang dùng cần nhóm xác nhận phiên bản chính thức.
 Các bước xử lý:
 
 1. Giữ lại đơn có trạng thái `delivered`.
@@ -49,12 +52,15 @@ Lần chạy đầu thu được 965 đơn bất thường. Khi xem biểu đồ
 trung vị của cả hai nhóm đều bằng 0, làm tỷ lệ trung vị thành 0/0. Phần vẽ biểu đồ được sửa để trường
 hợp này hiển thị tại mốc 1. Kết quả model không thay đổi sau khi sửa.
 
-Sau đó chạy lại 6 kiểm thử:
+Ở lần chạy đầu đã chạy 6 kiểm thử:
 
 - 3 kiểm thử bước chuẩn bị dữ liệu.
 - 3 kiểm thử model và các file kết quả.
 
 Tất cả kiểm thử đều đạt.
+
+Sau khi nối bảng đơn sạch, thêm kiểm thử giữ đơn không đạt KPI nhưng để thiếu đặc trưng thời gian;
+bộ kiểm thử hiện tại gồm 8 kiểm thử và đều đạt.
 
 ## 6. Đánh giá kết quả
 
@@ -65,10 +71,10 @@ Vì không có nhãn thật, không dùng accuracy, precision, recall hoặc F1.
 - Xem thủ công các đơn có anomaly score cao nhất.
 - Chạy lại với seed 7 và so sánh với seed 42 bằng Jaccard.
 
-Jaccard đạt 0,8021, cho thấy phần lớn đơn bị gắn cờ vẫn được giữ lại khi thay seed.
+Jaccard đạt 0,7970, cho thấy phần lớn đơn bị gắn cờ vẫn được giữ lại khi thay seed.
 
 ## 7. Chốt kết quả
 
 Mô hình phát hiện 965 trong 96.478 đơn delivered. Nhóm bất thường có trung vị phí vận chuyển
-cao khoảng 2,91 lần và thời gian giao hàng cao khoảng 2,47 lần nhóm bình thường.
+cao khoảng 2,89 lần và thời gian giao hàng hợp lệ cao khoảng 2,46 lần nhóm bình thường.
 Danh sách này nên được dùng làm đầu vào cho bước kiểm tra nghiệp vụ, không dùng như kết luận gian lận tự động.

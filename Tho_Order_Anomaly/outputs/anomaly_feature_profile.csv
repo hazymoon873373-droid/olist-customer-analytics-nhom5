@@ -1,9 +1,9 @@
 ﻿feature,normal_median,anomaly_median,anomaly_to_normal_ratio
-total_products_value,85.9,159.8,1.8603
-total_freight_value,17.12,49.75,2.906
-freight_to_product_ratio,0.2244,0.3221,1.4354
+total_products_value,85.9,149.4,1.7392
+total_freight_value,17.12,49.5,2.8914
+freight_to_product_ratio,0.2244,0.3222,1.4358
 total_items,1.0,1.0,1.0
 max_installments,2.0,3.0,1.5
 payment_records,1.0,1.0,1.0
-delivery_days,10.1796,25.1453,2.4702
+delivery_days,10.2276,25.152,2.4592
 late_days,0.0,0.0,

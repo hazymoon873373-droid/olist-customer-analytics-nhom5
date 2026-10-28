@@ -6,10 +6,12 @@
 - `source-code/train_isolation_forest.py`: huấn luyện, chấm điểm và xuất biểu đồ.
 - `source-code/predict_anomaly.py`: dùng model đã lưu để chấm điểm file mới.
 - `source-code/run_all.py`: chạy lại toàn bộ quy trình.
+- `source-code/export_summary.py`: tạo lại Excel từ CSV và metric của lần chạy.
 
 ## Dữ liệu và model
 
 - `data/order_anomaly_features.csv`: dữ liệu 96.478 đơn dùng cho mô hình.
+- `data/source_metadata.json`: tên, hash và thời gian sửa của các nguồn đầu vào.
 - `models/isolation_forest_order_pipeline.joblib`: Pipeline và model đã huấn luyện.
 
 ## Kết quả

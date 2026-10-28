@@ -1,0 +1,11 @@
+{
+  "master_file": "olist_powerbi_orders_master.csv",
+  "master_sha256": "4ace421830c12d23867255cc6155d68e6475100ffcb2679d701a7d96a018cad3",
+  "master_modified_time_utc": "2026-10-23T01:27:26.090062618+00:00",
+  "clean_orders_file": "olist_orders_clean.csv",
+  "clean_orders_sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8",
+  "clean_orders_modified_time_utc": "2026-10-24T06:02:22+00:00",
+  "delivered_orders": 96478,
+  "invalid_delay_kpi_orders": 1381,
+  "source_status": "Chờ nhóm xác nhận bản master và dữ liệu sạch chính thức"
+}
