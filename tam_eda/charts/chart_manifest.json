@@ -1,0 +1,42 @@
+[
+  {
+    "file": "chart1_revenue_over_time.png",
+    "scope": "Delivered orders; product value excludes freight"
+  },
+  {
+    "file": "chart2_revenue_by_state.png",
+    "scope": "Delivered orders"
+  },
+  {
+    "file": "chart3_revenue_by_category.png",
+    "scope": "Delivered item lines; sum price"
+  },
+  {
+    "file": "chart4_revenue_by_payment.png",
+    "scope": "All payment transactions; not accounting revenue"
+  },
+  {
+    "file": "chart5_order_value_histogram.png",
+    "scope": "All delivered orders, log transformed axis; no outlier deletion"
+  },
+  {
+    "file": "chart6_delivery_delay_vs_review.png",
+    "scope": "valid_delay_kpi=true; reviewed orders only; mean per order"
+  },
+  {
+    "file": "chart7_customer_segments.png",
+    "scope": "93358 delivered customers; manual segments, not K-Means"
+  },
+  {
+    "file": "chart8_cohort_retention_heatmap.png",
+    "scope": "Delivered customers; 0..23; future null and observed zero distinct"
+  },
+  {
+    "file": "chart9_ml_probability_test.png",
+    "scope": "944 historical test customers; no train_in_sample pooling"
+  },
+  {
+    "file": "chart10_kmeans_clusters.png",
+    "scope": "93358 delivered customers; frozen model snapshot"
+  }
+]

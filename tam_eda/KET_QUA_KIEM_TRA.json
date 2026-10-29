@@ -1,0 +1,187 @@
+{
+  "original_python_files": 8,
+  "original_csv_checks": 17,
+  "final_python_files": [
+    {
+      "file": "analytics_rules.py",
+      "sha256": "3474c9156d5100dd32fd0beb443f2abc40172d5176373e17cc735244cafc08db"
+    },
+    {
+      "file": "build_handover.py",
+      "sha256": "8dfac4329e5f1adafc32bfe38fcbad9d99160ade8e0421d4c76f9d17cf51e175"
+    },
+    {
+      "file": "eda_analysis_pipeline.py",
+      "sha256": "1d2ff82593cf6e7d0c06fcd9aeef68c1f73c388d2c2c1626b67570f39ef2e4ff"
+    },
+    {
+      "file": "export_ngan.py",
+      "sha256": "76728d656be14731de3d61eef8957782b18e4b670d5e2781dca43679583d026d"
+    },
+    {
+      "file": "generate_canvas_bg.py",
+      "sha256": "863378d0013d5261a61775f7b94d44fad64bcabe3bc1e411d2e0606544da2910"
+    },
+    {
+      "file": "generate_canvas_page5.py",
+      "sha256": "b1b80399bd236e7dff324521a7d27a3394c43360a4495431e3c6c83ab5854528"
+    },
+    {
+      "file": "integration_contract.py",
+      "sha256": "1e5ddcec5fef809ff8293fc86edf7fe41c97205d249f2b59bebfb71f36be8bb0"
+    },
+    {
+      "file": "load_data.py",
+      "sha256": "040b3b6cf4480b72faaaf3d3001c22dde30845a8d223f98044b2b28fa2fbc8e3"
+    },
+    {
+      "file": "run_eda.py",
+      "sha256": "9349ec9612b2f5eb6740df899067de3b4ade7ee7ab60466198d59234a3c5de37"
+    },
+    {
+      "file": "test_export_ngan.py",
+      "sha256": "ae0d9c9d52eb5d9e5bf888bbc3ff669ee123c94a429af1b4fee7dc7f8cf3d512"
+    },
+    {
+      "file": "test_handover.py",
+      "sha256": "0f977a4a1b573f2720402b004eb822db011c144cea73217950eb1f9e5fa65701"
+    },
+    {
+      "file": "test_rules.py",
+      "sha256": "a6a463990dd0bdc02c82e8056571df41f09bdd71faa0e13619c73c84dfd18721"
+    }
+  ],
+  "safe_import_no_output_changes": true,
+  "charts": [
+    {
+      "file": "chart10_kmeans_clusters.png",
+      "size": [
+        1650,
+        750
+      ]
+    },
+    {
+      "file": "chart1_revenue_over_time.png",
+      "size": [
+        1800,
+        750
+      ]
+    },
+    {
+      "file": "chart2_revenue_by_state.png",
+      "size": [
+        1650,
+        750
+      ]
+    },
+    {
+      "file": "chart3_revenue_by_category.png",
+      "size": [
+        1650,
+        750
+      ]
+    },
+    {
+      "file": "chart4_revenue_by_payment.png",
+      "size": [
+        1650,
+        750
+      ]
+    },
+    {
+      "file": "chart5_order_value_histogram.png",
+      "size": [
+        1650,
+        750
+      ]
+    },
+    {
+      "file": "chart6_delivery_delay_vs_review.png",
+      "size": [
+        1200,
+        750
+      ]
+    },
+    {
+      "file": "chart7_customer_segments.png",
+      "size": [
+        1650,
+        750
+      ]
+    },
+    {
+      "file": "chart8_cohort_retention_heatmap.png",
+      "size": [
+        1800,
+        1200
+      ]
+    },
+    {
+      "file": "chart9_ml_probability_test.png",
+      "size": [
+        1500,
+        750
+      ]
+    }
+  ],
+  "unit_and_integration_tests": 18,
+  "full_rebuild_hash_match": true,
+  "ml_artifacts_unchanged": 12,
+  "original_zip_unchanged": true,
+  "pbix_crc_pass": true,
+  "saved_DataRoot": "\"C:/Users/hazym/Downloads/Tam_Chot_Code_20261029/handover_v3\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]",
+  "stale_diagnostics_removed": true,
+  "pages": [
+    "01. Tổng quan kinh doanh",
+    "02. Khách hàng & Mua lại",
+    "03. Sản phẩm và thanh toán",
+    "04. Giao hàng và đánh giá sự hài lòng",
+    "05. Phân khúc và nguy cơ rời bỏ"
+  ],
+  "pbix_sha256": "f0d2ade2a735a4e4dfa37acd19aceffda4aa368ce003c29adb40cdf3eef82a56",
+  "data_controls": {
+    "orders": 99441,
+    "items": 112650,
+    "rfm": 93358,
+    "valid_delay": 95097,
+    "late": 7793,
+    "missing_review": 829,
+    "missing_estimated": 0,
+    "bad_zip": 0,
+    "median_delivery_valid": 10.271782407407407,
+    "csat_on_time": 4.293879400033016,
+    "csat_late": 2.5644992134242264
+  },
+  "powerbi_runtime": {
+    "refresh": "Full refresh completed",
+    "data_root": "\"C:/Users/hazym/Downloads/Tam_Chot_Code_20261029/handover_v3\" meta [IsParameterQuery=true, Type=\"Text\", IsParameterQueryRequired=true]",
+    "tables": 31,
+    "dax": {
+      "[Orders]": 99441,
+      "[EstimatedBlank]": 0,
+      "[MedianValid]": 10.271782407407407,
+      "[LateRate]": 0.08194790582247599,
+      "[Scored]": 1170,
+      "[Unscored]": 94919,
+      "[Jan2017]": 120312.86999999924,
+      "[Nov2017]": 1010271.3700000301
+    },
+    "relationships": [
+      {
+        "name": "Calendar_OrderDate",
+        "active": true,
+        "from_column": "OrderDate",
+        "to_column": "Date"
+      }
+    ],
+    "removed_unused_diagnostic_queries": [
+      "Errors in olist_powerbi_orders_master",
+      "Errors in olist_powerbi_orders_master (2)",
+      "Errors in olist_powerbi_orders_master (3)"
+    ]
+  },
+  "integration_contract": "handover_v3/integration_contract.json",
+  "native_pbix_verification_scope": "Binary unchanged from the previously saved/refreshed PBIX; business CSV hashes unchanged. After moving, set DataRoot to this copy before Refresh.",
+  "applied_branch": "codex/final-handover-20261029",
+  "exporter_tests": "3 passed; real package files/contract checked; existing output preserved; missing source does not publish partial package"
+}

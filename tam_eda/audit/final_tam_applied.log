@@ -1,0 +1,23 @@
+test_existing_handover_is_preserved (test_export_ngan.NganExportTests.test_existing_handover_is_preserved) ... ok
+test_missing_source_does_not_publish_partial_package (test_export_ngan.NganExportTests.test_missing_source_does_not_publish_partial_package) ... ok
+test_real_export_files_and_contract (test_export_ngan.NganExportTests.test_real_export_files_and_contract) ... ok
+test_business_kpis_reconcile_to_delivered_items (test_handover.HandoverTests.test_business_kpis_reconcile_to_delivered_items) ... ok
+test_cohort_and_ml_eligibility (test_handover.HandoverTests.test_cohort_and_ml_eligibility) ... ok
+test_integration_contract_resolves_actual_files_and_keys (test_handover.HandoverTests.test_integration_contract_resolves_actual_files_and_keys) ... ok
+test_manifest_and_rebuild (test_handover.HandoverTests.test_manifest_and_rebuild) ... ok
+test_sources_keys_dates_reviews_and_flags (test_handover.HandoverTests.test_sources_keys_dates_reviews_and_flags) ... ok
+test_bad_valid_flag_cannot_claim_missing_delivery (test_rules.RuleTests.test_bad_valid_flag_cannot_claim_missing_delivery) ... ok
+test_category_filter_does_not_include_other_basket_items (test_rules.RuleTests.test_category_filter_does_not_include_other_basket_items) ... ok
+test_cohort_zero_and_future_are_distinct (test_rules.RuleTests.test_cohort_zero_and_future_are_distinct) ... ok
+test_duplicate_key_rejected (test_rules.RuleTests.test_duplicate_key_rejected) ... ok
+test_input_failure_does_not_replace_existing_handover (test_rules.RuleTests.test_input_failure_does_not_replace_existing_handover) ... ok
+test_last_day_is_included (test_rules.RuleTests.test_last_day_is_included) ... ok
+test_missing_delivery_is_unknown (test_rules.RuleTests.test_missing_delivery_is_unknown) ... ok
+test_review_excludes_flagged_and_keeps_fraction (test_rules.RuleTests.test_review_excludes_flagged_and_keeps_fraction) ... ok
+test_rfm_midnight_normalization_and_cutoff (test_rules.RuleTests.test_rfm_midnight_normalization_and_cutoff) ... ok
+test_unknown_flag_is_rejected (test_rules.RuleTests.test_unknown_flag_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 134.106s
+
+OK

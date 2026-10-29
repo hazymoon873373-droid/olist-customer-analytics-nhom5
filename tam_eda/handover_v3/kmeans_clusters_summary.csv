@@ -1,0 +1,5 @@
+﻿Cụm (Cluster),Phân cụ K-Means (ML Segment),Số lượng khách (Count),Tỷ trọng khách (%),Chi tiêu TB (Monetary R$),Số ngày chưa mua TB (Recency),Số đơn TB (Frequency)
+Cụm 0,"At-Risk High Spenders (Chi tiêu cao, lâu chưa mua)",37665,40.34,237.26,279.0,1.0
+Cụm 1,"Hibernating Low-Value (Lâu chưa mua, giá trị thấp)",36601,39.2,45.1,285.2,1.0
+Cụm 2,Champions / Loyal (Khách mua lặp lại),2801,3.0,260.05,220.8,2.11
+Cụm 3,Recent Active (Khách mua gần đây),16291,17.45,116.99,42.9,1.0

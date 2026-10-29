@@ -13,7 +13,7 @@ Môn ABDA433708. Phân tích khách hàng, phân khúc RFM và nguy cơ không m
 | Dự đoán không mua lại | `Tho_Churn_Prediction/README.md` |
 | Phát hiện đơn bất thường | `Tho_Order_Anomaly/README.md` |
 | Website của Ngân | Nhánh `codex/ngan-web-bao-cao`, đọc `HUONG_DAN_WEB.md` trên nhánh đó |
-| BI của Tâm | Nhánh `codex/tam-bi`; bản RFM đã nhận được lưu trong `Tho_Shared/data/` |
+| BI của Tâm và gói dữ liệu cho web | `tam_eda/README.md`, `BAN_GIAO_NGAN.md`; script xuất `tam_eda/export_ngan.py` |
 
 `main` là bản sử dụng chung của phần thu thập, ETL/MongoDB và ML đã tích hợp. Website vẫn có nhánh riêng và hướng dẫn dữ liệu riêng; việc dọn mã nguồn không thay thế công việc tích hợp dashboard và ML vào web. Không dùng code cũ còn nằm ở commit trước làm bản đang chạy.
 

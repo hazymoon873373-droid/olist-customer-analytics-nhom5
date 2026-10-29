@@ -1,0 +1,11 @@
+test_all_excluded_reviews_leave_null (test_export_packages.ExportTests.test_all_excluded_reviews_leave_null) ... ok
+test_before_purchase_reviews_are_excluded_and_fraction_preserved (test_export_packages.ExportTests.test_before_purchase_reviews_are_excluded_and_fraction_preserved) ... ok
+test_duplicate_items_are_rejected (test_export_packages.ExportTests.test_duplicate_items_are_rejected) ... ok
+test_missing_review_flag_is_rejected (test_export_packages.ExportTests.test_missing_review_flag_is_rejected) ... ok
+test_no_cross_product_and_missing_date_preserved (test_export_packages.ExportTests.test_no_cross_product_and_missing_date_preserved) ... ok
+test_unknown_review_flag_is_rejected (test_export_packages.ExportTests.test_unknown_review_flag_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.002s
+
+OK
