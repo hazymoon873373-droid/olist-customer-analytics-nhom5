@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from analytics_data import load_group_data, data_signature, customer_snapshot, filter_orders, kpis, DATA_DIR
 from ui import metric_strip, render_chart
+from powerbi_embed import render_secure_powerbi
 
 
 @st.cache_data(show_spinner=False)
@@ -124,13 +125,13 @@ def render_evaluation(tables):
 
 def render_powerbi():
     st.subheader('Báo cáo Power BI · 5 trang')
-    st.write('Báo cáo gốc của Tâm và dashboard web sử dụng cùng bộ dữ liệu BI đã chốt. Tải file để mở bằng Power BI Desktop.')
+    render_secure_powerbi()
+    st.caption('Báo cáo của Tâm và dashboard web dùng cùng bộ dữ liệu BI đã chốt.')
     pbix = Path(__file__).resolve().parents[1] / 'tam_eda/POWERBI_Olist_Chot.pbix'
-    if pbix.is_file():
-        st.download_button('Tải báo cáo Power BI', pbix.read_bytes(), pbix.name, key='pbix_download')
-    else:
-        st.info('Chưa có file PBIX trong bản cài này. Dashboard web vẫn hoạt động với bộ dữ liệu bàn giao.')
-    st.caption('Trước Refresh trên máy nhận, đặt DataRoot về thư mục handover_v3. File PBIX không tự trở thành báo cáo nhúng trực tuyến khi push Git.')
+    with st.expander('Bản nguồn Power BI Desktop'):
+        if pbix.is_file():
+            st.download_button('Tải báo cáo Power BI', pbix.read_bytes(), pbix.name, key='pbix_download')
+        st.caption('Bản nguồn phục vụ chỉnh sửa. Trước Refresh trên máy nhận, đặt DataRoot về thư mục handover_v3.')
 
 
 def render_analytics():
