@@ -12,7 +12,9 @@ def load_style():
     for weight in (400, 500, 600):
         encoded = base64.b64encode((root / f'assets/fonts/IBMPlexSans-{weight}.ttf').read_bytes()).decode()
         fonts.append(f"@font-face{{font-family:'IBM Plex Sans';font-style:normal;font-weight:{weight};font-display:swap;src:url(data:font/ttf;base64,{encoded}) format('truetype')}}")
-    st.markdown('<style>' + ''.join(fonts) + (root / 'style.css').read_text(encoding='utf8') + '</style>', unsafe_allow_html=True)
+    pattern = base64.b64encode((root / 'assets/analytics-pattern.svg').read_bytes()).decode()
+    background = f':root{{--analytics-pattern:url("data:image/svg+xml;base64,{pattern}")}}'
+    st.markdown('<style>' + ''.join(fonts) + background + (root / 'style.css').read_text(encoding='utf8') + '</style>', unsafe_allow_html=True)
 
 
 def metric_strip(entries):

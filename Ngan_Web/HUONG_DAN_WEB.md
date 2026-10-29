@@ -16,7 +16,7 @@ python -m venv .venv
 
 Lệnh database.py yêu cầu tự đặt mật khẩu ít nhất 10 ký tự cho hai tài khoản admin và analyst. Không có mật khẩu mặc định. Tài khoản đã có được giữ nguyên. Các lần mở sau chỉ cần chạy lệnh Streamlit. Truy cập http://localhost:8501; dừng bằng Ctrl+C tại terminal. Môi trường đã kiểm thử: Python 3.14 trên Windows.
 
-Giao diện dùng nền sáng, các vùng dữ liệu riêng, KPI theo định dạng số Việt Nam và bộ lọc có nút đặt lại. Sidebar hiển thị Tổng quan & phân tích / Khách hàng & chăm sóc; tự thu gọn trên màn hình nhỏ.
+Giao diện dùng nền xanh xám sáng và họa tiết kết nối dữ liệu, menu dạng nút bo tròn, các khối chức năng có nền và viền riêng. KPI theo định dạng số Việt Nam và bộ lọc có nút đặt lại. Sidebar hiển thị Tổng quan & phân tích / Khách hàng & chăm sóc; tự thu gọn trên màn hình nhỏ.
 
 Chạy từ Ngan_Web để Streamlit đọc cấu hình theme trong .streamlit/config.toml. Font IBM Plex Sans có sẵn trong assets/fonts, dùng được cả khi không có Internet; giấy phép OFL đi kèm.
 

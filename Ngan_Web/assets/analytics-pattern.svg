@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="192" viewBox="0 0 480 192" fill="none">
+  <defs>
+    <pattern id="points" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1" fill="#cee1e7"/>
+    </pattern>
+  </defs>
+  <rect width="480" height="192" fill="url(#points)"/>
+  <g stroke="#bfd8e0" stroke-width="1.5">
+    <path d="M156 156 228 108 300 132 372 60 444 84"/>
+    <path d="M228 108 252 36 372 60M300 132 324 180M372 60 396 12"/>
+    <path d="M108 84 156 156M156 156 84 180"/>
+  </g>
+  <g fill="#d8e9ee" stroke="#a8cbd6" stroke-width="1.5">
+    <circle cx="156" cy="156" r="5"/><circle cx="228" cy="108" r="5"/>
+    <circle cx="300" cy="132" r="5"/><circle cx="372" cy="60" r="5"/>
+    <circle cx="444" cy="84" r="5"/><circle cx="252" cy="36" r="4"/>
+  </g>
+</svg>
