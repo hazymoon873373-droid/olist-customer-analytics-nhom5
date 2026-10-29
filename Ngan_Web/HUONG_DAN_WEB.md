@@ -16,6 +16,8 @@ python -m venv .venv
 
 Lệnh database.py yêu cầu tự đặt mật khẩu ít nhất 10 ký tự cho hai tài khoản admin và analyst. Không có mật khẩu mặc định. Tài khoản đã có được giữ nguyên. Các lần mở sau chỉ cần chạy lệnh Streamlit. Truy cập http://localhost:8501; dừng bằng Ctrl+C tại terminal. Môi trường đã kiểm thử: Python 3.14 trên Windows.
 
+Giao diện dùng nền sáng, các vùng dữ liệu riêng, KPI theo định dạng số Việt Nam và bộ lọc có nút đặt lại. Sidebar hiển thị Tổng quan & phân tích / Khách hàng & chăm sóc; tự thu gọn trên màn hình nhỏ.
+
 Chạy từ Ngan_Web để Streamlit đọc cấu hình theme trong .streamlit/config.toml. Font IBM Plex Sans có sẵn trong assets/fonts, dùng được cả khi không có Internet; giấy phép OFL đi kèm.
 
 ## Dữ liệu cần giữ cạnh mã nguồn
@@ -41,11 +43,11 @@ Bộ BI được đối chiếu checksum, số dòng, cột và khóa với mani
 
 ## Các màn hình
 
-1. **Dashboard tương tác:** lọc ngày mua và bang; GMV/AOV chỉ trên đơn delivered, không gồm cước. Tỷ lệ trễ và trung vị giao hàng chỉ dùng valid_delay_kpi=true. Ngày kết thúc được tính hết ngày. CSV xuất toàn bộ kết quả lọc. Cohort trong mục mở rộng là snapshot cố định, không thay đổi theo bộ lọc này.
+1. **Dashboard tương tác:** lọc ngày mua và bang; GMV/AOV chỉ trên đơn delivered, không gồm cước. Tỷ lệ trễ và trung vị giao hàng chỉ dùng valid_delay_kpi=true. Ngày kết thúc được tính hết ngày. Nút Đặt lại bộ lọc khôi phục toàn bộ ngày/bang. CSV xuất toàn bộ kết quả lọc. Cohort là snapshot cố định, không đổi theo bộ lọc; bản đồ nhiệt chỉ hiển thị từ tháng 1, bảng chi tiết giữ cả tháng 0 (100%).
 2. **Khách hàng & ML:** tra mã khách, lọc trạng thái chấm điểm/cụm K-Means, xem tối đa 200 dòng và xuất toàn bộ kết quả lọc. Thanh độ phủ mô tả toàn bộ khách, biểu đồ phân cụm mô tả kết quả sau lọc.
-3. **Đánh giá mô hình:** đọc kết quả test lịch sử, decile, ma trận nhầm lẫn và feature importance. Dữ liệu test tách khỏi snapshot khách hàng BI.
+3. **Đánh giá mô hình:** đọc kết quả test lịch sử, biểu đồ khách mua lại theo decile, ma trận nhầm lẫn có nhãn tiếng Việt và feature importance theo phần trăm. Bảng decile đầy đủ nằm trong mục mở rộng. Dữ liệu test tách khỏi snapshot khách hàng BI.
 4. **Power BI:** tải PBIX để mở bằng Power BI Desktop; đặt DataRoot thành đường dẫn handover_v3 trên máy nhận trước Refresh. Nút tải PBIX hiển thị trực tiếp trong tab Power BI; mở file đã tải bằng Power BI Desktop.
-5. **Tra cứu & Chăm sóc:** tìm đơn, khách RFM, hồ sơ chi tiết, ghi chú/nhãn, khách ưu tiên và chiến dịch. Màn hình chi tiết nối RFM/ML theo customer_unique_id; không cộng lặp đơn khi xem nhiều item/thanh toán/review.
+5. **Tra cứu & Chăm sóc:** tìm đơn, khách RFM, hồ sơ chi tiết, ghi chú/nhãn, khách ưu tiên và chiến dịch. Tìm mã ngay phía trên; các điều kiện phụ nằm trong Bộ lọc nâng cao. Điều kiện đang áp dụng vẫn được tóm tắt khi đóng bộ lọc. Màn hình chi tiết nối RFM/ML theo customer_unique_id; không cộng lặp đơn khi xem nhiều item/thanh toán/review.
 
 CSV/Excel ở các màn hình tra cứu chứa toàn bộ kết quả lọc; bảng được phân trang để dễ xem. PDF là báo cáo tóm tắt tối đa 100 dòng đầu, ghi rõ giới hạn và tổng số kết quả trên file. Font tiếng Việt được đóng gói sẵn.
 

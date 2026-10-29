@@ -1,4 +1,6 @@
 import streamlit as st
+from html import escape
+from ui import brand
 from streamlit.errors import StreamlitSecretNotFoundError
 from google_auth import google_configuration, resolve_google_account
 
@@ -57,26 +59,24 @@ def require_login():
     if user is None:
         st.session_state.pop("auth_user_id", None)
 
-        st.markdown(
-            """
-            <div class="hero-banner">
-                <div class="hero-eyebrow">
-                    Olist · Nhóm 5
-                </div>
-                <h1>Phân tích khách hàng Olist</h1>
-                <p>
-                    Đăng nhập để tra cứu đơn hàng,
-                    khám phá khách hàng và xuất báo cáo.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        left, center = st.columns([1.1, 1], gap='large', vertical_alignment='center')
+        with left:
+            brand()
+            st.markdown(
+                '<div class="login-intro"><div class="page-path">Phân tích dữ liệu lớn trong kinh doanh</div>'
+                '<h1>Hiểu khách hàng.<br>Nhìn rõ cơ hội.</h1>'
+                '<p>Khám phá hành trình mua sắm trên Olist: từ đơn hàng, phân khúc khách hàng đến kế hoạch chăm sóc.</p>'
+                '<div class="login-workflow">'
+                '<div class="login-step"><span>01</span><div><strong>Dữ liệu có nền tảng</strong><small>Thu thập, làm sạch và đối soát nguồn</small></div></div>'
+                '<div class="login-step"><span>02</span><div><strong>Phân tích có ngữ cảnh</strong><small>Dashboard, RFM và mô hình mua lại</small></div></div>'
+                '<div class="login-step"><span>03</span><div><strong>Chăm sóc có trọng tâm</strong><small>Tra cứu khách hàng và lập chiến dịch</small></div></div>'
+                '</div><div class="login-footnote">Đồ án ABDA433708 · HCMUTE · Nhóm 5</div></div>',
+                unsafe_allow_html=True,
+            )
 
-        left, center, right = st.columns([1, 2, 1])
-
-        with center:
+        with center, st.container(border=True, key='login_panel'):
             st.subheader("Đăng nhập hệ thống")
+            st.caption("Truy cập không gian làm việc của nhóm.")
             if google_error:
                 st.error('Tài khoản Google chưa được cấp quyền, đã bị vô hiệu hóa hoặc phiên đã hết hạn.')
                 st.button('Đổi tài khoản Google', on_click=st.logout, key='google_switch')
@@ -97,7 +97,7 @@ def require_login():
                 )
 
                 submitted = st.form_submit_button(
-                    "Đăng nhập"
+                    "Đăng nhập", width="stretch"
                 )
 
             if submitted:
@@ -124,13 +124,16 @@ def require_login():
         st.stop()
 
     with st.sidebar:
-        st.markdown('<h2 style="color:#1b6c80">olist<span style="color:#131416"> / analytics</span></h2>', unsafe_allow_html=True)
-        st.caption("Đồ án ABDA433708 · Nhóm 5")
-        st.divider()
+        brand()
+    return user
 
-        st.write(f"**Tài khoản:** {user.get('email', user['username'])}")
-        st.write(f"**Vai trò:** {user['role']}")
 
+def render_account_menu(user):
+    with st.sidebar:
+        st.markdown('<div class="sidebar-guide"><strong>Dữ liệu lịch sử Olist</strong><p>Brazil · 2016–2018<br>BRL · Phân tích & chăm sóc khách hàng</p></div>', unsafe_allow_html=True)
+        label = user.get('email', user['username'])
+        display_role = 'Quản trị viên' if user['role'] == 'Admin' else 'Chuyên viên phân tích'
+        st.markdown(f'<div class="account-card"><span class="account-initial">{escape(label[:1].upper())}</span><div><strong>{escape(label)}</strong><small>{escape(display_role)}</small></div></div>', unsafe_allow_html=True)
         st.button(
             "Đăng xuất",
             on_click=logout,
@@ -158,5 +161,3 @@ def require_login():
                 "Bạn có quyền xem, tra cứu và xuất báo cáo. "
                 "Không có quyền xem danh sách tài khoản."
             )
-
-    return user

@@ -91,75 +91,91 @@ def render_customers(orders, rfm, user):
             rfm["segment"].dropna().unique().tolist()
         ),
         key="cus_segments",
+        placeholder="Tất cả phân khúc",
     )
 
-    col1, col2 = st.columns(2)
+    with st.expander('Bộ lọc nâng cao · Bang, vùng, ngày và đánh giá'):
+        col1, col2 = st.columns(2)
 
-    with col1:
-        states = st.multiselect(
-            "Bang/đặc khu trên đơn hàng",
-            options=sorted(
-                order_data["customer_state"]
-                .dropna()
-                .unique()
-                .tolist()
-            ),
-            key="cus_states",
+        with col1:
+            states = st.multiselect(
+                "Bang/đặc khu trên đơn hàng",
+                options=sorted(
+                    order_data["customer_state"]
+                    .dropna()
+                    .unique()
+                    .tolist()
+                ),
+                key="cus_states",
+            )
+
+        with col2:
+            regions = st.multiselect(
+                "Vùng trên đơn hàng",
+                options=sorted(
+                    order_data["region_name"]
+                    .dropna()
+                    .unique()
+                    .tolist()
+                ),
+                key="cus_regions",
+            )
+
+        missing_review = st.checkbox(
+            "Chỉ tìm khách có đơn chưa có điểm đánh giá",
+            key="cus_missing_review",
         )
 
-    with col2:
-        regions = st.multiselect(
-            "Vùng trên đơn hàng",
-            options=sorted(
-                order_data["region_name"]
-                .dropna()
-                .unique()
-                .tolist()
-            ),
-            key="cus_regions",
+        reviews = st.multiselect(
+            "Điểm đánh giá trên đơn hàng",
+            options=sorted(order_data['review_score'].dropna().unique().tolist()),
+            disabled=missing_review,
+            key="cus_reviews",
         )
 
-    missing_review = st.checkbox(
-        "Chỉ tìm khách có đơn chưa có điểm đánh giá",
-        key="cus_missing_review",
-    )
+        valid_dates = order_data[
+            "order_purchase_timestamp"
+        ].dropna()
 
-    reviews = st.multiselect(
-        "Điểm đánh giá trên đơn hàng",
-        options=sorted(order_data['review_score'].dropna().unique().tolist()),
-        disabled=missing_review,
-        key="cus_reviews",
-    )
-
-    valid_dates = order_data[
-        "order_purchase_timestamp"
-    ].dropna()
-
-    date_enabled = st.checkbox(
-        "Lọc theo ngày đặt hàng",
-        disabled=valid_dates.empty,
-        key="cus_date_enabled",
-    )
-
-    date_range = None
-
-    if date_enabled and not valid_dates.empty:
-        min_date = valid_dates.min().date()
-        max_date = valid_dates.max().date()
-
-        date_range = st.date_input(
-            "Ngày bắt đầu và ngày kết thúc",
-            value=(min_date, max_date),
-            min_value=min_date,
-            max_value=max_date,
-            key="cus_dates",
+        date_enabled = st.checkbox(
+            "Lọc theo ngày đặt hàng",
+            disabled=valid_dates.empty,
+            key="cus_date_enabled",
         )
+
+        date_range = None
+
+        if date_enabled and not valid_dates.empty:
+            min_date = valid_dates.min().date()
+            max_date = valid_dates.max().date()
+
+            date_range = st.date_input(
+                "Ngày bắt đầu và ngày kết thúc",
+                value=(min_date, max_date),
+                min_value=min_date,
+                max_value=max_date,
+                key="cus_dates",
+            )
 
     st.button(
         "↺ Xóa toàn bộ bộ lọc khách hàng",
         on_click=reset_customer_filters,
         key="cus_reset",
     )
+
+    active_filters = []
+    if states:
+        active_filters.append('Bang: ' + ', '.join(states))
+    if regions:
+        active_filters.append('Vùng: ' + ', '.join(regions))
+    if missing_review:
+        active_filters.append('Có đơn chưa có đánh giá')
+    elif reviews:
+        active_filters.append('Điểm: ' + ', '.join(map(str, reviews)))
+    if date_enabled and date_range is not None and len(date_range) == 2:
+        active_filters.append(f'Ngày: {date_range[0]:%d/%m/%Y} – {date_range[1]:%d/%m/%Y}')
+    if active_filters:
+        st.caption('Đang áp dụng · ' + ' · '.join(active_filters))
 
     if date_enabled:
         if date_range is None or len(date_range) != 2:

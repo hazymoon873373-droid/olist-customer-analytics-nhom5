@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from auth import require_login
+from auth import require_login, render_account_menu
 from campaigns import render_campaigns
 from customer_care import render_customer_care
 from customer_detail import render_customer_detail
@@ -13,7 +13,7 @@ from pdf_export import render_pdf_export
 from analytics_data import DATA_DIR
 from analytics_pages import render_analytics, cached_data
 from analytics_data import data_signature
-from ui import load_style
+from ui import load_style, page_header, metric_strip
 
 
 # ==============================================
@@ -38,10 +38,10 @@ CSS_PATH = BASE_DIR / "style.css"
 load_style()
 
 current_user = require_login()
-workspace = st.sidebar.radio('Không gian làm việc',['Dashboard & Machine Learning','Tra cứu & Chăm sóc'],key='workspace')
+workspace = st.sidebar.radio('Không gian làm việc',['Dashboard & Machine Learning','Tra cứu & Chăm sóc'],key='workspace', format_func=lambda value: {'Dashboard & Machine Learning':'Tổng quan & phân tích', 'Tra cứu & Chăm sóc':'Khách hàng & chăm sóc'}[value])
+render_account_menu(current_user)
 if workspace == 'Dashboard & Machine Learning':
-    st.title('Phân tích khách hàng Olist')
-    st.caption('Dữ liệu thương mại điện tử Brazil · BRL · Lịch sử 2016–2018')
+    page_header('Phân tích khách hàng Olist', 'Khám phá doanh số, hành vi mua sắm và cơ hội giữ chân khách hàng.')
     render_analytics()
     st.stop()
 
@@ -49,8 +49,7 @@ if workspace == 'Dashboard & Machine Learning':
 # ==============================================
 # 3. BANNER
 # ==============================================
-st.title('Tra cứu & chăm sóc khách hàng')
-st.caption('Dữ liệu lịch sử Olist · Phân khúc RFM · Chăm sóc và chiến dịch giữ chân')
+page_header('Khách hàng & chăm sóc', 'Từ lịch sử mua hàng đến ghi chú, ưu tiên và chiến dịch giữ chân.')
 
 
 # ==============================================
@@ -120,38 +119,13 @@ customer_ids = (
 # ==============================================
 # 7. TỔNG QUAN
 # ==============================================
-st.subheader("Tổng quan dữ liệu")
+metric_strip([
+    ('Tổng số đơn hàng', format_number(orders['order_id'].nunique()), 'Toàn bộ dữ liệu tổng hợp'),
+    ('Khách hàng duy nhất', format_number(orders['customer_unique_id'].nunique()), 'Trong bảng đơn hàng'),
+    ('Khách hàng có RFM', format_number(rfm['customer_unique_id'].nunique()), 'Snapshot RFM đã bàn giao'),
+])
+st.caption('Các chỉ số mô tả toàn bộ dữ liệu. Kết quả theo bộ lọc được hiển thị trong từng tab bên dưới.')
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric(
-        "Tổng số đơn hàng",
-        format_number(orders["order_id"].nunique()),
-    )
-
-with col2:
-    st.metric(
-        "Khách hàng trong bảng đơn hàng",
-        format_number(
-            orders["customer_unique_id"].nunique()
-        ),
-    )
-
-with col3:
-    st.metric(
-        "Khách hàng trong bảng RFM",
-        format_number(
-            rfm["customer_unique_id"].nunique()
-        ),
-    )
-
-st.caption(
-    "Các chỉ số trên phản ánh toàn bộ dữ liệu tổng hợp. "
-    "Kết quả sau khi lọc được hiển thị riêng trong từng tab."
-)
-
-st.divider()
 
 
 # ==============================================
@@ -185,107 +159,123 @@ with tab_orders:
         "ngày đặt hàng và điểm đánh giá."
     )
 
-    search_order = st.text_input(
-        "Mã đơn hàng",
-        placeholder="Nhập toàn bộ hoặc một phần order_id...",
-        key="order_search",
-    ).strip()
-
-    state_options = sorted(
-        orders["customer_state"]
-        .dropna()
-        .unique()
-        .tolist()
-    )
-
-    status_options = sorted(
-        orders["order_status"]
-        .dropna()
-        .unique()
-        .tolist()
-    )
-
-    filter_col1, filter_col2 = st.columns(2)
-
-    with filter_col1:
-        selected_states = st.multiselect(
-            "Bang/đặc khu của khách hàng",
-            options=state_options,
-            help="Để trống để xem tất cả.",
-            key="order_states",
+    with st.container(border=True, key='order_search_panel'):
+        search_col, reset_col = st.columns([4, 1], vertical_alignment='bottom')
+        with search_col:
+            search_order = st.text_input(
+                "Mã đơn hàng",
+                placeholder="Nhập toàn bộ hoặc một phần order_id...",
+                key="order_search",
+            ).strip()
+        with reset_col:
+            st.button('Đặt lại bộ lọc', on_click=reset_order_filters, key='reset_orders', width='stretch')
+    with st.expander('Bộ lọc nâng cao · Bang, trạng thái, ngày và đánh giá'):
+        state_options = sorted(
+            orders["customer_state"]
+            .dropna()
+            .unique()
+            .tolist()
         )
 
-    with filter_col2:
-        selected_statuses = st.multiselect(
-            "Trạng thái đơn hàng",
-            options=status_options,
-            help="Để trống để xem tất cả.",
-            key="order_statuses",
+        status_options = sorted(
+            orders["order_status"]
+            .dropna()
+            .unique()
+            .tolist()
         )
 
-    # ------------------------------------------
-    # Bộ lọc thời gian
-    # ------------------------------------------
-    valid_dates = orders[
-        "order_purchase_timestamp"
-    ].dropna()
+        filter_col1, filter_col2 = st.columns(2)
 
-    selected_dates = None
-    date_filter_ready = True
-
-    if not valid_dates.empty:
-        min_date = valid_dates.min().date()
-        max_date = valid_dates.max().date()
-
-        enable_date_filter = st.checkbox(
-            "Lọc theo ngày đặt hàng",
-            key="order_date_enabled",
-        )
-
-        if enable_date_filter:
-            selected_dates = st.date_input(
-                "Ngày bắt đầu và ngày kết thúc",
-                value=(min_date, max_date),
-                min_value=min_date,
-                max_value=max_date,
-                key="order_date_range",
+        with filter_col1:
+            selected_states = st.multiselect(
+                "Bang/đặc khu của khách hàng",
+                options=state_options,
+                help="Để trống để xem tất cả.",
+                key="order_states",
+            placeholder="Tất cả các bang",
             )
 
-            date_filter_ready = (
-                isinstance(selected_dates, (tuple, list))
-                and len(selected_dates) == 2
+        with filter_col2:
+            selected_statuses = st.multiselect(
+                "Trạng thái đơn hàng",
+                options=status_options,
+                help="Để trống để xem tất cả.",
+                key="order_statuses",
+            placeholder="Tất cả trạng thái",
             )
 
-            if date_filter_ready:
-                date_filter_ready = (
-                    selected_dates[0] <= selected_dates[1]
+        # ------------------------------------------
+        # Bộ lọc thời gian
+        # ------------------------------------------
+        valid_dates = orders[
+            "order_purchase_timestamp"
+        ].dropna()
+
+        selected_dates = None
+        date_filter_ready = True
+
+        if not valid_dates.empty:
+            min_date = valid_dates.min().date()
+            max_date = valid_dates.max().date()
+
+            enable_date_filter = st.checkbox(
+                "Lọc theo ngày đặt hàng",
+                key="order_date_enabled",
+            )
+
+            if enable_date_filter:
+                selected_dates = st.date_input(
+                    "Ngày bắt đầu và ngày kết thúc",
+                    value=(min_date, max_date),
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="order_date_range",
                 )
-    else:
-        st.info(
-            "Không có ngày đặt hàng hợp lệ để lọc thời gian."
+
+                date_filter_ready = (
+                    isinstance(selected_dates, (tuple, list))
+                    and len(selected_dates) == 2
+                )
+
+                if date_filter_ready:
+                    date_filter_ready = (
+                        selected_dates[0] <= selected_dates[1]
+                    )
+        else:
+            st.info(
+                "Không có ngày đặt hàng hợp lệ để lọc thời gian."
+            )
+
+        # ------------------------------------------
+        # Bộ lọc đánh giá
+        # ------------------------------------------
+        only_missing_reviews = st.checkbox(
+            "Chỉ xem đơn chưa có điểm đánh giá",
+            key="order_missing_reviews",
         )
 
-    # ------------------------------------------
-    # Bộ lọc đánh giá
-    # ------------------------------------------
-    only_missing_reviews = st.checkbox(
-        "Chỉ xem đơn chưa có điểm đánh giá",
-        key="order_missing_reviews",
-    )
+        selected_reviews = st.multiselect(
+            "Điểm đánh giá",
+            options=sorted(orders.review_score.dropna().unique().tolist()),
+            help="Để trống để không giới hạn điểm.",
+            key="order_reviews",
+        placeholder="Tất cả điểm đánh giá",
+            disabled=only_missing_reviews,
+        )
 
-    selected_reviews = st.multiselect(
-        "Điểm đánh giá",
-        options=sorted(orders.review_score.dropna().unique().tolist()),
-        help="Để trống để không giới hạn điểm.",
-        key="order_reviews",
-        disabled=only_missing_reviews,
-    )
-
-    st.button(
-        "↺ Xóa bộ lọc đơn hàng",
-        on_click=reset_order_filters,
-        key="reset_orders",
-    )
+    active_filters = []
+    if selected_states:
+        active_filters.append('Bang: ' + ', '.join(selected_states))
+    if selected_statuses:
+        active_filters.append('Trạng thái: ' + ', '.join(selected_statuses))
+    if selected_dates is not None and date_filter_ready:
+        active_filters.append(f'Ngày: {selected_dates[0]:%d/%m/%Y} – {selected_dates[1]:%d/%m/%Y}')
+    if only_missing_reviews:
+        active_filters.append('Chưa có đánh giá')
+    elif selected_reviews:
+        active_filters.append('Điểm: ' + ', '.join(map(str, selected_reviews)))
+    if active_filters:
+        st.caption('Đang áp dụng · ' + ' · '.join(active_filters))
 
     # ------------------------------------------
     # Áp dụng điều kiện
