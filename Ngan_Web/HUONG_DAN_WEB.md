@@ -27,7 +27,6 @@ Chạy từ Ngan_Web để Streamlit đọc cấu hình theme trong .streamlit/c
 | Tâm + kết quả Thọ tích hợp | ../tam_eda/handover_v3 | Dashboard, bảng đơn/RFM, snapshot ML, metrics, cohort và hợp đồng dữ liệu |
 | Thiên | ../Thien_ETL_MongoDB/processed | Hồ sơ, địa chỉ, đơn, sản phẩm, thanh toán và đánh giá chi tiết |
 | Power BI | ../tam_eda/POWERBI_Olist_Chot.pbix | Tải báo cáo Power BI gốc 5 trang |
-| Isolation Forest | ../Tho_Machine_Learning/Tho_Order_Anomaly/outputs | Tab đơn bất thường, tìm/lọc và xuất CSV |
 | SQLite | storage/olist_app.db | Tài khoản, chăm sóc, chiến dịch và nhật ký |
 
 Clone toàn bộ repository hoặc giữ các thư mục trên cùng cấu trúc. Không cần nhân bản raw hay tải lại Kaggle. Chỉ có Ngan_Web mà thiếu dữ liệu thì ứng dụng sẽ báo thiếu file.

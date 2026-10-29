@@ -40,31 +40,3 @@ Orders 99.441; items 112.650; geo_by_zip 19.015. KPI giao trễ chỉ dùng 95.0
 audit_report.csv là kết quả kiểm định dữ liệu do pipeline tạo, thuộc sản phẩm ETL; không phải báo cáo rà soát nội bộ. Manifest dùng đối soát file. Không đưa dữ liệu tài khoản hoặc backup có credentials lên repo công khai.
 
 Nguồn: Olist Brazilian E-Commerce (CC BY-NC-SA 4.0), https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce . API IBGE trong phần thu thập của nhóm là nguồn tham chiếu địa lý.
-
-## Kiểm chứng database và phục hồi
-
-Đã kiểm chứng trên MongoDB Community 8.0.34 local, không phải Atlas: 10 collection, 1.569.937 document. evidence/database_verification.json lưu số dòng, index, 6 quan hệ và truy vấn explain. evidence/bson_validators.json là schema BSON thực tế. evidence/backup_restore.json ghi đối soát backup/restore: số dòng, BSON dbHash, index và validator khớp. Archive nằm trong dataset của ZIP nộp, không nhân bản file lớn lên Git.
-
-Chạy tại gốc repository, với MONGODB_URI trỏ tới database của mình:
-
-```powershell
-python Thien_ETL_MongoDB/mongodb/import_clean.py --db BigData
-mongosh "$env:MONGODB_URI/BigData" --file Thien_ETL_MongoDB/Mongodb.js
-python Thien_ETL_MongoDB/mongodb/verify_database.py --db BigData --apply-validators --output verification.json
-python Thien_ETL_MongoDB/mongodb/backup_restore.py --source-db BigData --restore-db BigData_restore_new --archive BigData_new.archive.gz --evidence restore_verification.json
-```
-
-Lệnh mongosh cần URI hợp lệ, không nối thêm /BigData nếu URI đã có database hoặc query string. Kiểm tra CONFIG.dbName trước khi chạy. Import từ chối collection không rỗng; backup từ chối archive đã có hoặc database đích đã tồn tại. Cài Database Tools để có mongodump/mongorestore trên PATH. Schema chỉ bật sau khi chuyển kiểu BSON.
-
-```mermaid
-erDiagram
-    CUSTOMERS ||--o{ ORDERS : customer_id
-    ORDERS ||--o{ ITEMS : order_id
-    ORDERS ||--o{ PAYMENTS : order_id
-    ORDERS ||--o{ REVIEWS : order_id
-    PRODUCTS ||--o{ ITEMS : product_id
-    SELLERS ||--o{ ITEMS : seller_id
-    GEO_BY_ZIP ||--o{ CUSTOMERS : zip_prefix
-```
-
-Mối nối ZIP có thể thiếu tọa độ; không loại khách chỉ vì chưa nối được ZIP. customer_unique_id có thể xuất hiện ở nhiều customer_id. Tổng hợp item/payment/review riêng về order_id trước join cấp đơn.

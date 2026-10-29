@@ -36,3 +36,9 @@ Thumbs.db
 /Ngan_Web/storage/
 **/.streamlit/secrets.toml
 client_secret*.json
+
+# Local submission documents are kept off Git for this code-only delivery.
+/reports/
+/submission_tools/
+/refs/
+/libs/
