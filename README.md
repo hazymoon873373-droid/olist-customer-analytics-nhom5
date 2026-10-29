@@ -10,8 +10,9 @@ ABDA433708: phân tích khách hàng, phân khúc RFM và nguy cơ không mua l�
 | Thiên | [Thien_ETL_MongoDB](Thien_ETL_MongoDB/README.md) | Code ETL/MongoDB, dữ liệu sạch, index và export |
 | Thọ | [Tho_Machine_Learning](Tho_Machine_Learning/README.md) | RFM/K-Means, proxy không mua lại 180 ngày, Isolation Forest và loader chung |
 | Huy | [Huy_ThuThap_Olist](Huy_ThuThap_Olist/README.md) | Thu thập Olist/IBGE, snapshot raw và thông tin nguồn |
+| Ngân | [Ngan_Web](Ngan_Web/HUONG_DAN_WEB.md) | Website Streamlit, dashboard BI/ML, tra cứu, phân quyền, chăm sóc, chiến dịch và xuất báo cáo |
 
-Website Ngân đang ở nhánh [codex/ngan-web-bao-cao](https://github.com/hazymoon873373-droid/olist-customer-analytics-nhom5/tree/codex/ngan-web-bao-cao). Dữ liệu bàn giao đã có, việc tích hợp ML/dashboard và nghiệm thu web được thực hiện riêng. Các bản code thay thế nằm trong lịch sử Git; dùng các thư mục hiện hành ở trên.
+Website hiện hành nằm trong Ngan_Web, dùng trực tiếp dữ liệu sạch/BI đã chốt cạnh mã nguồn. Các bản code thay thế nằm trong lịch sử Git; dùng các thư mục hiện hành ở trên.
 
 ## Chạy từ bản clone mới
 
@@ -26,6 +27,7 @@ Mỗi phần có README và môi trường thư viện riêng. Không dùng requ
 - Thiên: cd Thien_ETL_MongoDB, cài requirements.txt; clean_olist.py đọc raw từ ../Huy_ThuThap_Olist/dataset/runs/20261019T171446Z_e35970/raw/olist. CSV sạch có sẵn trong processed. Kiểm tra CONFIG.dbName trước khi chạy Mongodb.js trên database thật; MONGODB_URI đi qua biến môi trường, không đưa mật khẩu vào Git.
 - Thọ: cd Tho_Machine_Learning; cài requirements của module cần chạy. Giữ 4 thư mục con cạnh nhau. Kết quả churn hiện hành duy nhất nằm Tho_Churn_Prediction/outputs/temporal_v4_provisional.
 - Huy: python -X utf8 -B Huy_ThuThap_Olist/source-code/verify_run.py từ gốc repo để kiểm tra snapshot; không cần tải lại dữ liệu để sử dụng bản đã chốt.
+- Ngân: cd Ngan_Web, cài requirements.txt vào môi trường ảo, chạy python database.py để tự tạo mật khẩu Admin/Analyst rồi python -m streamlit run app.py. Hướng dẫn đầy đủ trong HUONG_DAN_WEB.md. SQLite tài khoản và chăm sóc được giữ riêng, không đưa vào Git.
 
 ## Kiểm thử
 
@@ -38,6 +40,7 @@ python -B -m unittest discover -s Tho_Machine_Learning/Tho_RFM_KMeans/tests -v
 python -B -m unittest discover -s Tho_Machine_Learning/Tho_Churn_Prediction/tests -v
 python -B -m unittest discover -s Tho_Machine_Learning/Tho_Order_Anomaly/tests -v
 python -B -m unittest discover -s Huy_ThuThap_Olist/source-code/tests -v
+python -B -m unittest discover -s Ngan_Web/tests -v
 ```
 
 Kiểm thử JavaScript là offline/mô phỏng; không thay bằng chứng database, index và backup/restore thật. Code không tự triển khai website khi push Git.
