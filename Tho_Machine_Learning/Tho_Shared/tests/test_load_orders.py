@@ -102,6 +102,37 @@ class LoadOrdersTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.load()
 
+    def test_final_tam_master_column_names_are_supported(self):
+        current=self.master.rename(columns={'order_products_value':'total_products_value',
+            'order_freight_value':'total_freight_value','total_items_count':'total_items'})
+        current.to_csv(self.base/'master.csv',index=False,encoding='utf-8-sig')
+        self.assertEqual(self.load().iloc[0].total_products_value,100)
+
+    def test_alias_conflict_is_rejected_instead_of_choosing_a_version(self):
+        self.master['total_products_value']=999
+        self.write_sources()
+        with self.assertRaisesRegex(ValueError,'alias'):
+            self.load()
+
+    def test_matching_aliases_are_accepted(self):
+        self.master['total_products_value']=100
+        self.master['total_freight_value']=10
+        self.master['total_items']=1
+        self.write_sources()
+        self.assertEqual(self.load().iloc[0].total_items,1)
+
+    def test_zero_master_totals_for_order_without_items_are_supported(self):
+        self.items=self.items.iloc[:0]
+        self.master[['order_products_value','order_freight_value','total_items_count']]=0
+        self.write_sources()
+        self.assertEqual(self.load().iloc[0].total_products_value,0)
+
+    def test_nonzero_master_totals_without_items_are_rejected(self):
+        self.items=self.items.iloc[:0]
+        self.write_sources()
+        with self.assertRaisesRegex(ValueError,'item'):
+            self.load()
+
 
 if __name__ == "__main__":
     unittest.main()

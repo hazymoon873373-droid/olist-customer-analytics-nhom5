@@ -47,6 +47,25 @@ def boolean_flags(data, columns):
     return data
 
 
+def read_master(path, sep, encoding):
+    """Accept legacy/ETL and final BI column names; never hide conflicts."""
+    frame=pd.read_csv(path,sep=sep,encoding=encoding,low_memory=False,na_values=['null'])
+    aliases={'order_products_value':'total_products_value',
+             'order_freight_value':'total_freight_value','total_items_count':'total_items'}
+    for canonical,alias in aliases.items():
+        if canonical in frame and alias in frame:
+            left=pd.to_numeric(frame[canonical],errors='raise').to_numpy(dtype=float)
+            right=pd.to_numeric(frame[alias],errors='raise').to_numpy(dtype=float)
+            if not np.isclose(left,right,atol=1e-6,rtol=0,equal_nan=True).all():
+                raise ValueError(f'Conflicting master alias: {canonical}/{alias}')
+            frame=frame.drop(columns=alias)
+        elif canonical not in frame and alias in frame:
+            frame=frame.rename(columns={alias:canonical})
+    missing=set(MASTER_COLUMNS)-set(frame.columns)
+    if missing:raise ValueError(f'Master missing columns: {sorted(missing)}')
+    return frame[MASTER_COLUMNS].copy()
+
+
 def load_orders(master_path=MASTER_FILE, clean_orders_path=CLEAN_ORDERS_FILE,
                 payments_path=PAYMENTS_FILE, ibge_path=IBGE_FILE,
                 customers_path=CUSTOMERS_FILE, items_path=ITEMS_FILE):
@@ -54,8 +73,7 @@ def load_orders(master_path=MASTER_FILE, clean_orders_path=CLEAN_ORDERS_FILE,
     with Path(master_path).open("rb") as file:
         header = file.readline()
     sep, encoding = ("\t", "cp1252") if b"\t" in header else (",", "utf-8-sig")
-    master = pd.read_csv(master_path, sep=sep, encoding=encoding, usecols=MASTER_COLUMNS,
-                         low_memory=False, na_values=["null"])
+    master = read_master(master_path,sep,encoding)
     clean = pd.read_csv(clean_orders_path, usecols=CLEAN_COLUMNS, low_memory=False, na_values=["null"])
     payments = pd.read_csv(payments_path, usecols=["order_id", "payment_sequential"], low_memory=False)
     customers = pd.read_csv(customers_path, usecols=["customer_id", "customer_unique_id", "customer_state"], low_memory=False, na_values=["null"])
@@ -101,7 +119,11 @@ def load_orders(master_path=MASTER_FILE, clean_orders_path=CLEAN_ORDERS_FILE,
     for master_column, clean_column in [("order_products_value", "product"), ("order_freight_value", "freight"), ("total_items_count", "items")]:
         a = pd.to_numeric(checked_items[master_column], errors="coerce").to_numpy(dtype=float)
         b = pd.to_numeric(checked_items[clean_column], errors="coerce").to_numpy(dtype=float)
-        if not np.isclose(a, b, atol=1e-6, rtol=0, equal_nan=True).all():
+        # BI represents an empty basket as zero; older exports preserve null.
+        no_items=~checked_items.order_id.isin(totals.index).to_numpy()
+        equal=np.isclose(a,b,atol=1e-6,rtol=0,equal_nan=True)
+        equal |= no_items & (np.isnan(a) | (a == 0))
+        if not equal.all():
             raise ValueError(f"Cột {master_column} không khớp tổng hợp bảng item sạch")
 
     regions = json.loads(Path(ibge_path).read_text(encoding="utf-8"))

@@ -19,3 +19,17 @@ Thumbs.db
 /processed/
 /handover/
 /storage/*.db
+
+# Local review notes and transient files are not submission artifacts.
+/tam_eda/audit/
+/tam_eda/tai_lieu/
+/tam_eda/BAO_CAO_RAT_SOAT_VA_SUA_LOI.md
+/tam_eda/KET_QUA_KIEM_TRA.json
+/tam_eda/powerbi_runtime_checks.json
+/tam_eda/inputs/ml/payment_primary_order_summary.csv
+/tam_eda/inputs/ml/payment_transaction_summary.csv
+.pytest_cache/
+.ipynb_checkpoints/
+*.tmp
+*.bak*
+*~

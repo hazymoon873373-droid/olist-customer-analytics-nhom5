@@ -37,7 +37,7 @@ Phiên bản `isolation_forest_v3_20261028` nối master mới với bảng đơ
 
 ## Cách chạy
 
-Từ thư mục gốc repository:
+Từ thư mục Tho_Machine_Learning:
 
 ```bash
 pip install -r Tho_Order_Anomaly/requirements.txt

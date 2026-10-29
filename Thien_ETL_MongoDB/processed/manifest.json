@@ -1,0 +1,16 @@
+{
+  "source": "Olist snapshot 20261019T171446Z_e35970; cleaned by clean_olist.py",
+  "sha256": {
+    "audit_report.csv": "542946a23b30c9491b7ad20fa5a7f2c5476a51fabdb4bea029061c9806e4210c",
+    "geo_by_zip.csv": "600656813ffd496d41da30a94cbe6368726d9a5c6c22490d50a057ecfdccda86",
+    "olist_customers_clean.csv": "c35df38fc2e81bb648484d14e6681322a256c1b208bce86e1110a22ffb3c39ca",
+    "olist_geolocation_clean.csv": "804b32279b8fc57f07daf5a2b7d061adcb675d23d67c781dd414c36ca0a945a1",
+    "olist_orders_clean.csv": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8",
+    "olist_order_items_clean.csv": "f150d8ff15bdb615f65698d9bd8ad1b0801c98e13e120d9a10064118845f8301",
+    "olist_order_payments_clean.csv": "363b3f9bde8ca98f6f36d4a68b24c4a711222df88d13e700d24e65bc8d32e2c3",
+    "olist_order_reviews_clean.csv": "6bb12a8a3214e890e1f291489169b4175ef4472f3aadab8b672fadc9e3ede247",
+    "olist_products_clean.csv": "69106d81c74090e2edd8f0c0bd9ab53081207049efe707dfd161aa6f216e634a",
+    "olist_sellers_clean.csv": "b0315bfa664dc63864b4a878ff7fed22b33282ecf125125db8bfdf29d909a2e6",
+    "product_category_name_translation_clean.csv": "ab914315d33815e0bc240d3aab0d3e004f4d85abdc0773c8016106b20d4ffb65"
+  }
+}

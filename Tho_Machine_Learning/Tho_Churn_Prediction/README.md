@@ -8,7 +8,7 @@ validation hiện tại đều thiếu lớp mua lại ở train đủ điều k
 chặn tuning, giữ Random Forest/ngưỡng 0,5 làm baseline và xuất bằng chứng. Test lịch sử
 đã được xem ở các lần review trước; không gọi đây là holdout mới chưa từng tiếp xúc.
 
-## Chạy từ thư mục gốc repository
+## Chạy từ thư mục Tho_Machine_Learning
 
 ```powershell
 python -m venv .venv

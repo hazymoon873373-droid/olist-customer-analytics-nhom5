@@ -15,6 +15,11 @@ các cột giá trị để tương thích model, đếm bản ghi thanh toán v
 Các file CSV giữ nguyên nội dung nguồn, không sửa dữ liệu gốc. SHA-256 các nguồn được ghi
 trong kết quả của từng phần.
 
+Bộ đọc cũng nhận master CSV cuối của Tâm với các tên `total_products_value`,
+`total_freight_value`, `total_items`, bên cạnh tên cũ/ETL. Nếu cả hai cách đặt tên
+cùng xuất hiện nhưng khác giá trị, chương trình dừng. Đơn không có item được phép
+biểu diễn tổng bằng 0 hoặc null; tổng khác 0 khi không có item bị từ chối.
+
 Cột `Delivery_Status` trong master ghi “On-time” cả với đơn không đủ điều kiện KPI.
 Pipeline học máy không dùng cột này; dùng cờ `valid_delay_kpi` và ngày gốc trong bảng sạch.
 
