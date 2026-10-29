@@ -44,7 +44,7 @@ Bộ BI được đối chiếu checksum, số dòng, cột và khóa với mani
 1. **Dashboard tương tác:** lọc ngày mua và bang; GMV/AOV chỉ trên đơn delivered, không gồm cước. Tỷ lệ trễ và trung vị giao hàng chỉ dùng valid_delay_kpi=true. Ngày kết thúc được tính hết ngày. CSV xuất toàn bộ kết quả lọc. Cohort trong mục mở rộng là snapshot cố định, không thay đổi theo bộ lọc này.
 2. **Khách hàng & ML:** tra mã khách, lọc trạng thái chấm điểm/cụm K-Means, xem tối đa 200 dòng và xuất toàn bộ kết quả lọc. Thanh độ phủ mô tả toàn bộ khách, biểu đồ phân cụm mô tả kết quả sau lọc.
 3. **Đánh giá mô hình:** đọc kết quả test lịch sử, decile, ma trận nhầm lẫn và feature importance. Dữ liệu test tách khỏi snapshot khách hàng BI.
-4. **Power BI:** tải PBIX để mở bằng Power BI Desktop; đặt DataRoot thành đường dẫn handover_v3 trên máy nhận trước Refresh. Dashboard web có biểu đồ tương tác thực tế; PBIX không tự được nhúng trực tuyến.
+4. **Power BI:** tải PBIX để mở bằng Power BI Desktop; đặt DataRoot thành đường dẫn handover_v3 trên máy nhận trước Refresh. Nút tải PBIX hiển thị trực tiếp trong tab Power BI; mở file đã tải bằng Power BI Desktop.
 5. **Tra cứu & Chăm sóc:** tìm đơn, khách RFM, hồ sơ chi tiết, ghi chú/nhãn, khách ưu tiên và chiến dịch. Màn hình chi tiết nối RFM/ML theo customer_unique_id; không cộng lặp đơn khi xem nhiều item/thanh toán/review.
 
 CSV/Excel ở các màn hình tra cứu chứa toàn bộ kết quả lọc; bảng được phân trang để dễ xem. PDF là báo cáo tóm tắt tối đa 100 dòng đầu, ghi rõ giới hạn và tổng số kết quả trên file. Font tiếng Việt được đóng gói sẵn.
@@ -113,28 +113,10 @@ Kiểm thử tự động Google dùng danh tính framework mô phỏng để ki
 
 Tài liệu: https://docs.streamlit.io/develop/tutorials/authentication/google và https://developers.google.com/identity/openid-connect/openid-connect .
 
+## Tải báo cáo Power BI
 
-## Nhúng Power BI có bảo vệ
+Sau khi đăng nhập website, mở tab **Power BI** và chọn **Tải báo cáo Power BI (.pbix)**. File được phục vụ trực tiếp từ `tam_eda/POWERBI_Olist_Chot.pbix`, dùng cùng bộ dữ liệu BI đã chốt.
 
-Website dùng chế độ **Website or portal / user-owns-data** của Power BI Service. Google bảo vệ truy cập website; Power BI yêu cầu đăng nhập Microsoft và quyền xem báo cáo riêng. Thêm email vào danh sách Google không tự cấp quyền Power BI.
+Mở file bằng Power BI Desktop để xem 5 trang báo cáo. Trước khi Refresh nguồn CSV trên máy nhận, đặt tham số DataRoot về thư mục `tam_eda/handover_v3` của bản clone hoặc bộ bàn giao.
 
-1. Đăng nhập tài khoản Microsoft có quyền xuất bản trong tổ chức. Import `tam_eda/POWERBI_Olist_Chot.pbix` vào workspace riêng tư. Kiểm tra đủ 5 trang, slicer và số liệu sau khi import; chưa cần Refresh nguồn CSV trên dịch vụ để xem snapshot đã import.
-2. Kiểm tra giấy phép người xuất bản/người xem và capacity của workspace. Chia sẻ với `khaitq@hcmute.edu.vn` dưới quyền xem, không cấp Build/Reshare nếu không cần. Dùng tùy chọn không gửi thông báo nếu chỉ cấp quyền; không gửi email thay mặt nhóm khi chưa được yêu cầu.
-3. Trong báo cáo, chọn **File → Embed report → Website or portal**, sao chép đường dẫn HTTPS dạng `https://app.powerbi.com/reportEmbed?reportId=...`. Không dùng **Publish to web** hoặc liên kết `/view?r=...`, không sao chép access token vào cấu hình.
-4. Thêm vào `.streamlit/secrets.toml` trên máy chủ (giữ nguyên các mục Google):
-
-```toml
-[powerbi]
-embed_url = "DUONG_DAN_NHUNG_RIENG_TU_THAT_TU_POWER_BI"
-```
-
-Hoặc đặt biến môi trường `OLIST_POWERBI_EMBED_URL` trước khi chạy ứng dụng. Cấu hình môi trường ưu tiên hơn secrets. Code kiểm tra HTTPS, host chính xác app.powerbi.com, đường dẫn reportEmbed, mã report/workspace/tenant và các tham số được phép; từ chối liên kết công khai và tham số token.
-
-5. Website chứa iframe phải chạy HTTPS. Trên HTTP localhost, web hiển thị thông báo và nút mở báo cáo riêng tư tại Power BI; chưa hiển thị iframe để tránh nhầm là đã triển khai nhúng thành công. Khi đưa web lên HTTPS, Google OAuth cũng cần thêm redirect URI tương ứng vào Google Cloud và đổi cấu hình callback trên máy chủ.
-6. Giảng viên đăng nhập website, mở tab Power BI rồi đăng nhập Microsoft bằng tài khoản được chia sẻ. Nếu trình duyệt chặn popup hoặc đăng nhập trong iframe, dùng nút **Mở báo cáo trong Power BI** và cho phép popup/cookie phù hợp; không tắt kiểm soát truy cập báo cáo.
-
-Giấy phép: với cách nhúng này, người xem cần Pro/PPU phù hợp, trừ trường hợp cả báo cáo và semantic model nằm trên capacity đáp ứng điều kiện của Microsoft (Premium/Fabric F64+). Bản dùng thử nếu có chỉ có thời hạn; kiểm tra ngày hết hạn và quyền người xem thực tế. Không coi tài khoản Free hoặc việc có một URL nhúng là bằng chứng giảng viên chắc chắn xem được.
-
-Kiểm thử code chỉ xác nhận kiểm tra URL và cơ chế chọn iframe/đường dẫn theo HTTP/HTTPS. Nghiệm thu end-to-end cần báo cáo thật đã xuất bản, website HTTPS, quyền/giấy phép phù hợp và một lần xem thành công bằng tài khoản giảng viên. Không ghi đã hoàn tất bước này khi chưa kiểm tra thực tế.
-
-Tài liệu Microsoft: https://learn.microsoft.com/en-us/power-bi/collaborate-share/service-embed-secure .
+Tab này chỉ cung cấp file tải về; không cần cấu hình Power BI Service, đường dẫn nhúng hoặc tài khoản Microsoft để tải file từ web. Đăng nhập Google/phân quyền của website vẫn được áp dụng trước khi tải.
