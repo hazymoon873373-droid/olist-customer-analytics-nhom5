@@ -1,0 +1,9 @@
+{
+  "model_version": "isolation_forest_v3_20261028",
+  "rows": 96478,
+  "flagged_rows": 965,
+  "sha256": {
+    "order_anomaly_scores.csv": "b481c05dae4b428493de60af8dc99828e30773449afd420354aba8b26cacc015",
+    "model_metrics.json": "a842eca5baa392cd84d0b0b2d9a97ba0d8587d88e9068f21ff3cac4856aa969e"
+  }
+}

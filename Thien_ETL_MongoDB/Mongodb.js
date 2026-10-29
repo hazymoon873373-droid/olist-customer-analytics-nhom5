@@ -78,12 +78,15 @@ function auditPreConversionFailures(collectionName, fieldName, targetType) {
 }
 const fieldTypes = {
   olist_orders_clean: { order_purchase_timestamp: "date", order_approved_at: "date", order_delivered_carrier_date: "date", order_delivered_customer_date: "date", order_estimated_delivery_date: "date" },
-  olist_products_clean: { product_name_lenght: "int", product_description_lenght: "int", product_photos_qty: "int", product_weight_g: "double" },
+  olist_products_clean: { product_name_lenght: "int", product_description_lenght: "int", product_photos_qty: "int", product_weight_g: "double", product_length_cm: "double", product_height_cm: "double", product_width_cm: "double" },
   olist_order_items_clean: { order_item_id: "int", shipping_limit_date: "date", price: "double", freight_value: "double" },
   olist_order_payments_clean: { payment_sequential: "int", payment_installments: "int", payment_value: "double" },
-  olist_order_reviews_clean: { review_score: "int" },
+  olist_order_reviews_clean: { review_score: "int", review_creation_date: "date", review_answer_timestamp: "date" },
   geo_by_zip: { geolocation_lat: "double", geolocation_lng: "double", point_count: "int" }
 };
+if (db.getCollectionNames().includes("olist_geolocation_clean")) {
+  fieldTypes.olist_geolocation_clean = { geolocation_lat: "double", geolocation_lng: "double" };
+}
 Object.entries(fieldTypes).forEach(([coll, fields]) => Object.entries(fields).forEach(([field, type]) => auditPreConversionFailures(coll, field, type)));
 const zipFields = { olist_customers_clean: "customer_zip_code_prefix", olist_sellers_clean: "seller_zip_code_prefix", geo_by_zip: "geolocation_zip_code_prefix" };
 Object.entries(zipFields).forEach(([coll, field]) => {
@@ -93,7 +96,7 @@ Object.entries(zipFields).forEach(([coll, field]) => {
   ]).toArray();
   if (invalid.length) throw new Error("ZIP sai hoac thieu: " + coll + "." + field + " (" + invalid[0].n + ")");
 });
-const boolFields = { olist_orders_clean: ["delivered_missing_date", "valid_delay_kpi"], olist_products_clean: ["category_missing"], geo_by_zip: ["usable_for_geo"] };
+const boolFields = { olist_orders_clean: ["delivered_missing_date", "valid_delay_kpi", "carrier_before_approval", "customer_before_carrier"], olist_products_clean: ["category_missing", "weight_zero"], geo_by_zip: ["usable_for_geo", "state_conflict", "is_outlier_coord"], olist_order_reviews_clean: ["review_before_purchase", "is_duplicate_review_order"] };
 Object.entries(boolFields).forEach(([coll, fields]) => fields.forEach(field => {
   const invalid = db.getCollection(coll).aggregate([
     { $project: { s: { $toLower: { $convert: { input: "$" + field, to: "string", onError: "", onNull: "" } } } } },
@@ -211,6 +214,22 @@ db.geo_by_zip.updateMany({}, [
 ]);
 
 // ---------------------------------------------------------------------
+// Complete every declared numeric/date/boolean field, including optional geo details.
+// All fields were audited before the first update; keep source nulls as BSON null.
+Object.entries(fieldTypes).forEach(([coll, fields]) => {
+  const converted = {};
+  Object.entries(fields).forEach(([field, type]) => {
+    const input = type === "int" ? { $convert: { input: "$" + field, to: "double", onError: null, onNull: null } } : "$" + field;
+    converted[field] = { $convert: { input: input, to: type, onError: null, onNull: null } };
+  });
+  db.getCollection(coll).updateMany({}, [{ $set: converted }]);
+});
+Object.entries(boolFields).forEach(([coll, fields]) => {
+  const converted = {};
+  fields.forEach(field => { converted[field] = { $eq: [{ $toLower: { $toString: "$" + field } }, "true"] }; });
+  db.getCollection(coll).updateMany({}, [{ $set: converted }]);
+});
+
 // BƯỚC 4: TẠO HỆ THỐNG INDEX TRÊN DATABASE BigData
 // ---------------------------------------------------------------------
 print("\n--- BƯỚC 4: TẠO INDEXES TRÊN BigData ---");
