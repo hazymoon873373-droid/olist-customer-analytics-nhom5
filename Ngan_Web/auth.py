@@ -1,4 +1,6 @@
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
+from google_auth import google_configuration, resolve_google_account
 
 from database import (
     init_db,
@@ -12,10 +14,20 @@ def logout():
     # Xóa phiên đăng nhập và các bộ lọc của người dùng cũ.
     for key in list(st.session_state.keys()):
         del st.session_state[key]
+    if st.user.get('is_logged_in', False):
+        st.logout()
 
 
 def require_login():
     init_db()
+    google_roles = None
+    configuration_error = False
+    try:
+        google_roles = google_configuration(st.secrets.to_dict())
+    except StreamlitSecretNotFoundError:
+        pass
+    except (ValueError, TypeError, AttributeError):
+        configuration_error = True
 
     # Đọc lại vai trò và trạng thái từ database.
     user_id = st.session_state.get("auth_user_id")
@@ -25,6 +37,22 @@ def require_login():
         if user_id is not None
         else None
     )
+    google_error = False
+    method = st.session_state.get('auth_method')
+    if method == 'google' or (user is None and st.user.get('is_logged_in', False)):
+        user = None
+        if google_roles is not None and st.user.get('is_logged_in', False):
+            try:
+                user = resolve_google_account(st.user.to_dict(), google_roles)
+                st.session_state['auth_user_id'] = user['id']
+                st.session_state['auth_method'] = 'google'
+            except PermissionError:
+                google_error = True
+        else:
+            google_error = True
+    elif user is not None and user['auth_kind'] != 'local':
+        # An SQLite id alone never authenticates a Google-only account.
+        user = None
 
     if user is None:
         st.session_state.pop("auth_user_id", None)
@@ -49,6 +77,9 @@ def require_login():
 
         with center:
             st.subheader("Đăng nhập hệ thống")
+            if google_error:
+                st.error('Tài khoản Google chưa được cấp quyền, đã bị vô hiệu hóa hoặc phiên đã hết hạn.')
+                st.button('Đổi tài khoản Google', on_click=st.logout, key='google_switch')
 
             with st.form(
                 "login_form",
@@ -79,7 +110,15 @@ def require_login():
                     )
                 else:
                     st.session_state["auth_user_id"] = account["id"]
+                    st.session_state['auth_method'] = 'local'
                     st.rerun()
+
+            st.divider()
+            st.button('Đăng nhập bằng Google', key='google_login', width='stretch',
+                      disabled=google_roles is None, on_click=st.login, args=('google',))
+            if google_roles is None:
+                st.caption('Đăng nhập Google chưa được cấu hình hợp lệ trên máy này.' if configuration_error
+                           else 'Đăng nhập Google chưa được cấu hình trên máy này.')
 
         # Không chạy phần dữ liệu phía dưới khi chưa đăng nhập.
         st.stop()
@@ -89,7 +128,7 @@ def require_login():
         st.caption("Đồ án ABDA433708 · Nhóm 5")
         st.divider()
 
-        st.write(f"**Tài khoản:** {user['username']}")
+        st.write(f"**Tài khoản:** {user.get('email', user['username'])}")
         st.write(f"**Vai trò:** {user['role']}")
 
         st.button(

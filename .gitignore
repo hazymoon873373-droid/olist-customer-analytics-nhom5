@@ -34,3 +34,5 @@ Thumbs.db
 *.bak*
 *~
 /Ngan_Web/storage/
+**/.streamlit/secrets.toml
+client_secret*.json

@@ -60,7 +60,7 @@ CSV/Excel ở các màn hình tra cứu chứa toàn bộ kết quả lọc; b�
 
 Mật khẩu băm bằng Argon2. Quyền được kiểm tra lại ở hàm thao tác SQLite và trong giao dịch ghi, không chỉ ẩn nút. Xóa mềm giữ dữ liệu và nhật ký; thêm lại khách ưu tiên đã xóa sẽ khôi phục bản ghi. Mức ưu tiên do Admin chọn độc lập với điểm ML. Các chiến dịch chỉ lưu kế hoạch và thành viên; không tự gửi tin nhắn cho khách.
 
-SQLite cần thư mục có quyền ghi. storage bị loại khỏi Git; không đưa tài khoản, mật khẩu hoặc database làm việc vào repo công khai. Sao lưu file SQLite khi ứng dụng đã dừng. Mỗi máy có SQLite riêng; nếu triển khai một máy chủ, mọi người cần dùng cùng ứng dụng trên máy chủ đó để chia sẻ dữ liệu chăm sóc. Phiên đăng nhập kết thúc khi đăng xuất; tải lại tab có thể yêu cầu đăng nhập lại.
+SQLite cần thư mục có quyền ghi. storage bị loại khỏi Git; không đưa tài khoản, mật khẩu hoặc database làm việc vào repo công khai. Sao lưu file SQLite khi ứng dụng đã dừng. Mỗi máy có SQLite riêng; nếu triển khai một máy chủ, mọi người cần dùng cùng ứng dụng trên máy chủ đó để chia sẻ dữ liệu chăm sóc. Đăng nhập bằng mật khẩu dùng phiên Streamlit; tải lại tab có thể cần đăng nhập lại. Đăng nhập Google dùng cookie nhận diện của Streamlit, nhưng ứng dụng vẫn kiểm tra hạn ID token, danh sách email được cấp quyền và trạng thái tài khoản ở mỗi lần chạy. Khi token hết hạn, đăng xuất rồi chọn Google để xác thực lại.
 
 ## Mốc thời gian và giới hạn ML
 
@@ -85,3 +85,30 @@ Bộ kiểm thử kiểm tra số lượng/khóa khách, phạm vi KPI/GMV, null
 Đăng nhập Admin → dashboard toàn bộ → lọc một bang, đối chiếu KPI và tải CSV → xem độ phủ ML và trạng thái chưa chấm → xem hạn chế trên tập test → chuyển Tra cứu & Chăm sóc → tra một khách thật → tạo ghi chú/ưu tiên/chiến dịch → xuất Excel/PDF → đăng xuất, vào Analyst để chứng minh không được sửa. Dùng dữ liệu chăm sóc minh họa do nhóm tự tạo, phân biệt với lịch sử Olist.
 
 Nguồn dữ liệu Olist/IBGE được ghi trong phần thu thập của Huy. Website chạy local để demo; việc push Git chưa phải triển khai website công khai. Triển khai và cơ chế truy cập từ ngoài máy cần cấu hình riêng.
+
+
+## Đăng nhập Google thật
+
+Google xác minh danh tính qua OpenID Connect; quyền Admin/Analyst do danh sách email trong cấu hình riêng của nhóm quyết định. Tài khoản ngoài danh sách, email chưa xác minh, phiên hết hạn và tài khoản bị vô hiệu hóa đều bị từ chối. Email mới không tự được cấp Admin. Định danh liên kết là Google `sub`; không tự gộp với tài khoản mật khẩu chỉ vì trùng email.
+
+1. Trong Google Cloud, chọn project của đồ án; cấu hình Google Auth Platform, chọn External và giữ trạng thái Testing cho demo nhóm.
+2. Tạo OAuth client loại Web application. Thêm redirect URI `http://localhost:8501/oauth2callback`. Nếu dùng `127.0.0.1` hoặc cổng khác, khai báo chính xác URI tương ứng ở cả hai nơi.
+3. Tải JSON OAuth client về máy. Thêm các tài khoản demo vào Test users khi Google yêu cầu. Tài khoản sinh viên phải là một tài khoản Google sử dụng được với email đó; tên miền trường tự nó không chứng minh có tài khoản Google.
+4. Từ Ngan_Web, chạy công cụ nhập cấu hình (thay đường dẫn và email ví dụ bằng thông tin thật):
+
+```powershell
+.\.venv\Scripts\python.exe setup_google.py --client-json 'C:\Users\TEN_MAY\Downloads\client_secret_XXX.json' --admin 'truongnhom@example.com' --analyst 'thanhvien@example.com'
+```
+
+Có thể lặp `--admin`/`--analyst` cho từng người được cấp quyền. Công cụ sinh cookie secret ngẫu nhiên, kiểm tra redirect URI và ghi `.streamlit/secrets.toml`; không in khóa bí mật và không ghi đè cấu hình đã có. Mẫu cấu hình không chứa khóa thật nằm trong `.streamlit/secrets.example.toml`. Danh sách quyền Google không nằm trong code công khai.
+
+5. Khởi động lại Streamlit rồi mở `http://localhost:8501`. Chọn **Đăng nhập bằng Google**, chọn đúng tài khoản và đồng ý chia sẻ danh tính cơ bản. Website chỉ yêu cầu `openid profile email`, không yêu cầu Gmail, Drive hay danh bạ.
+6. Sau khi quay về web, kiểm tra email/vai trò ở sidebar. **Đăng xuất** xóa phiên web và cookie đăng nhập ứng dụng; không đăng xuất toàn bộ tài khoản Google trên trình duyệt.
+
+Nếu nút Google bị vô hiệu hóa: chưa có cấu hình thật hoặc cấu hình không hợp lệ; mật khẩu nội bộ vẫn dùng được. Nếu gặp redirect_uri_mismatch, kiểm tra scheme/host/port/path khớp hoàn toàn. Nếu tài khoản không được cấp quyền, kiểm tra `[google_access]` và Test users. Không bật công khai ứng dụng Google chỉ để vượt một lỗi cấu hình.
+
+Khi triển khai lên máy chủ, thêm redirect URI HTTPS thật vào OAuth client và đổi secrets tương ứng; localhost chỉ quay về máy đang mở trình duyệt. Mỗi máy chạy ứng dụng cần cấu hình riêng. Không đưa secrets.toml, JSON OAuth hoặc database người dùng vào gói bàn giao hay Git. Bản sao code trong Downloads cần cài lại requirements để có `streamlit[auth]` và Authlib.
+
+Kiểm thử tự động Google dùng danh tính framework mô phỏng để kiểm tra phân quyền, không thay bằng chứng đăng nhập OAuth thật qua Google. Chỉ xác nhận luồng thật hoạt động sau khi Google đã chuyển về web và hiển thị đúng email/vai trò.
+
+Tài liệu: https://docs.streamlit.io/develop/tutorials/authentication/google và https://developers.google.com/identity/openid-connect/openid-connect .

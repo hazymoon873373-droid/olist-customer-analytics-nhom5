@@ -43,6 +43,17 @@ def init_db():
                 )
                 """
             )
+            # Additive migration preserves existing local accounts and care/audit foreign keys.
+            columns = {row['name'] for row in connection.execute('PRAGMA table_info(users)')}
+            if 'auth_kind' not in columns:
+                connection.execute("ALTER TABLE users ADD COLUMN auth_kind TEXT NOT NULL DEFAULT 'local' CHECK(auth_kind IN ('local','google'))")
+            connection.execute('''
+                CREATE TABLE IF NOT EXISTS google_identities (
+                    subject TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+                    verified_email TEXT NOT NULL UNIQUE COLLATE NOCASE
+                )
+            ''')
 
 
 def create_user(username, password, role):
@@ -50,6 +61,8 @@ def create_user(username, password, role):
 
     if not username:
         raise ValueError("Tên đăng nhập không được để trống.")
+    if username.startswith('google:'):
+        raise ValueError('Tên đăng nhập này dành riêng cho Google.')
 
     if len(password) < 10:
         raise ValueError("Mật khẩu cần ít nhất 10 ký tự.")
@@ -80,14 +93,14 @@ def authenticate(username, password):
     with closing(connect_db()) as connection:
         row = connection.execute(
             """
-            SELECT id, username, password_hash, role, is_active
+            SELECT id, username, password_hash, role, is_active, auth_kind
             FROM users
             WHERE username = ?
             """,
             (username,),
         ).fetchone()
 
-    if row is None or not row["is_active"]:
+    if row is None or not row["is_active"] or row['auth_kind'] != 'local':
         return None
 
     try:
@@ -109,7 +122,7 @@ def get_active_user(user_id):
     with closing(connect_db()) as connection:
         row = connection.execute(
             """
-            SELECT id, username, role
+            SELECT id, username, role, auth_kind
             FROM users
             WHERE id = ? AND is_active = 1
             """,
