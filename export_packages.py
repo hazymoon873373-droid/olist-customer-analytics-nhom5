@@ -30,6 +30,12 @@ def build_order_summary(orders, customers, items, payments, reviews):
     items = items.copy()
     payments = payments.copy()
     reviews = reviews.copy()
+    if 'review_before_purchase' not in reviews.columns:
+        raise ValueError('Clean reviews require review_before_purchase; export refused')
+    review_flags=reviews['review_before_purchase'].astype('string').str.strip().str.lower()
+    if not review_flags.isin(['true','false']).all():
+        raise ValueError('Invalid or missing review_before_purchase flag')
+    reviews=reviews.loc[review_flags.eq('false')].copy()
     for frame, cols in [(items, ["price", "freight_value"]),
                         (payments, ["payment_value", "payment_installments"]), (reviews, ["review_score"])]:
         for col in cols:

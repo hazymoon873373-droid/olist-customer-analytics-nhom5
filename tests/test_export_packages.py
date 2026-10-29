@@ -15,7 +15,7 @@ class ExportTests(unittest.TestCase):
         self.customers = pd.DataFrame([{'customer_id':'c1','customer_unique_id':'u1','customer_state':'SP'}])
         self.items = pd.DataFrame([{'order_id':'o1','order_item_id':1,'price':10,'freight_value':2}, {'order_id':'o1','order_item_id':2,'price':20,'freight_value':3}])
         self.payments = pd.DataFrame([{'order_id':'o1','payment_sequential':1,'payment_value':15,'payment_installments':1,'payment_type':'voucher'}, {'order_id':'o1','payment_sequential':2,'payment_value':20,'payment_installments':3,'payment_type':'credit_card'}])
-        self.reviews = pd.DataFrame([{'order_id':'o1','review_score':'3'}, {'order_id':'o1','review_score':'5'}])
+        self.reviews = pd.DataFrame([{'order_id':'o1','review_score':'3','review_before_purchase':False}, {'order_id':'o1','review_score':'5','review_before_purchase':False}])
 
     def test_no_cross_product_and_missing_date_preserved(self):
         result = module.build_order_summary(self.orders, self.customers, self.items, self.payments, self.reviews)
@@ -34,6 +34,29 @@ class ExportTests(unittest.TestCase):
         items = pd.concat([self.items, self.items.iloc[[0]]], ignore_index=True)
         with self.assertRaises(ValueError):
             module.build_order_summary(self.orders, self.customers, items, self.payments, self.reviews)
+
+    def test_before_purchase_reviews_are_excluded_and_fraction_preserved(self):
+        self.reviews = pd.DataFrame([
+            {'order_id':'o1','review_score':1,'review_before_purchase':'True'},
+            {'order_id':'o1','review_score':4,'review_before_purchase':'False'},
+            {'order_id':'o1','review_score':5,'review_before_purchase':'False'},
+        ])
+        result=module.build_order_summary(self.orders,self.customers,self.items,self.payments,self.reviews)
+        self.assertEqual(result.iloc[0].avg_review_score,4.5)
+
+    def test_all_excluded_reviews_leave_null(self):
+        self.reviews['review_before_purchase']=True
+        result=module.build_order_summary(self.orders,self.customers,self.items,self.payments,self.reviews)
+        self.assertTrue(pd.isna(result.iloc[0].avg_review_score))
+
+    def test_unknown_review_flag_is_rejected(self):
+        self.reviews['review_before_purchase']='maybe'
+        with self.assertRaises(ValueError):
+            module.build_order_summary(self.orders,self.customers,self.items,self.payments,self.reviews)
+
+    def test_missing_review_flag_is_rejected(self):
+        with self.assertRaises(ValueError):
+            module.build_order_summary(self.orders,self.customers,self.items,self.payments,self.reviews.drop(columns='review_before_purchase'))
 
 
 if __name__ == '__main__':
