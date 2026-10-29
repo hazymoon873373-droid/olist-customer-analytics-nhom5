@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from analytics_data import load_group_data, data_signature, customer_snapshot, filter_orders, kpis
 from ui import metric_strip, render_chart, number, section_heading, insight
+from anomaly_pages import render_anomalies
 
 
 @st.cache_data(show_spinner=False)
@@ -198,12 +199,14 @@ def render_analytics():
             cached_data.clear()
             st.rerun()
         return
-    dashboard, ml, evaluation, powerbi = st.tabs(['Dashboard tương tác', 'Khách hàng & ML', 'Đánh giá mô hình', 'Power BI'])
+    dashboard, ml, evaluation, anomaly, powerbi = st.tabs(['Dashboard tương tác', 'Khách hàng & ML', 'Đánh giá mô hình', 'Đơn bất thường', 'Power BI'])
     with dashboard:
         render_dashboard(tables)
     with ml:
         render_customer_ml(tables)
     with evaluation:
         render_evaluation(tables)
+    with anomaly:
+        render_anomalies(tables)
     with powerbi:
         render_powerbi()

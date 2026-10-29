@@ -47,6 +47,14 @@ Kiểm thử JavaScript là offline/mô phỏng; không thay bằng chứng data
 
 ## Phạm vi và giới hạn
 
+## Hồ sơ nộp LabF
+
+reports chứa báo cáo đồ án DOCX/PDF, 14 slides thuyết trình, bảng phân công và bảng tự chấm. Đây là hồ sơ nộp môn học; ghi chú sửa lỗi, Notion và file rà soát nội bộ không đưa vào repo. Các thông tin nhận diện chưa cung cấp, % DONE và chữ ký để trống để nhóm xác nhận. Video tùy chọn chưa sản xuất; vấn đáp cá nhân vẫn cần thực hiện.
+
+Web có thêm tab Đơn bất thường, đọc trực tiếp đầu ra Isolation Forest của Thọ với checksum riêng. Dữ liệu bất thường chỉ phục vụ rà soát nghiệp vụ, không xác nhận gian lận. Phần Thiên có script import an toàn, validator và backup/restore đã kiểm chứng trên MongoDB local.
+
+### Phạm vi và giới hạn phân tích
+
 99.441 đơn, 112.650 item. RFM reference 30/08/2018 có 93.358 khách. ML test cutoff 01/03/2018, horizon 180 ngày, 944 khách. Snapshot BI cutoff 31/08/2018 có 96.089 khách, 1.170 được chấm và 94.919 chưa được chấm. Đọc integration_contract.json trong tam_eda/handover_v3 trước khi nối bảng; không gán xác suất thiếu thành 0, không ghép điểm test thành điểm BI.
 
 RF/0,5 dự đoán cả test là không mua lại, recall mua lại bằng 0; temporal validation chưa đủ điều kiện, observation end còn giả định và xác suất chưa hiệu chuẩn. Đây là mô hình thử nghiệm của đồ án. Báo cáo kết quả thuật toán và giới hạn vẫn giữ trong phần Thọ. 4 cụm K-Means khác 6 nhóm RFM theo quy tắc; đơn bất thường không đồng nghĩa gian lận.

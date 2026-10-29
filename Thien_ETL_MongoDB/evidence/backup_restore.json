@@ -1,0 +1,837 @@
+{
+  "checked_at_utc": "2026-10-29T19:27:58.263563+00:00",
+  "environment": "isolated MongoDB on localhost; not Atlas",
+  "server_version": "8.0.34",
+  "source_database": "BigData",
+  "restored_database": "olist_restore_verified_20261030",
+  "archive_file": "BigData_verified.archive.gz",
+  "archive_bytes": 56394459,
+  "archive_sha256": "f254f0415e2a5e402fa31d0cee708b2181ca269060e0a9b230089440d901aab0",
+  "dump_tool_version": "mongodump version: 100.20.0",
+  "restore_tool_version": "mongorestore version: 100.20.0",
+  "collections": {
+    "geo_by_zip": {
+      "documents": 19015,
+      "bson_md5": "b1f81f27ac95152e68a5e36dfe02168a",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "geolocation_zip_code_prefix": 1
+          },
+          "name": "geolocation_zip_code_prefix_1",
+          "unique": true
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "geolocation_zip_code_prefix",
+              "geolocation_lat",
+              "geolocation_lng",
+              "geolocation_city",
+              "geolocation_state",
+              "point_count",
+              "state_conflict",
+              "is_outlier_coord",
+              "usable_for_geo"
+            ],
+            "properties": {
+              "geolocation_zip_code_prefix": {
+                "bsonType": "string",
+                "pattern": "^[0-9]{5}$"
+              },
+              "geolocation_lat": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "geolocation_lng": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "geolocation_city": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "geolocation_state": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "point_count": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "state_conflict": {
+                "bsonType": "bool"
+              },
+              "is_outlier_coord": {
+                "bsonType": "bool"
+              },
+              "usable_for_geo": {
+                "bsonType": "bool"
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_customers_clean": {
+      "documents": 99441,
+      "bson_md5": "0f932e81dacd8812f5e62dde75f80beb",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "customer_id": 1
+          },
+          "name": "customer_id_1",
+          "unique": true
+        },
+        {
+          "v": 2,
+          "key": {
+            "customer_unique_id": 1
+          },
+          "name": "customer_unique_id_1"
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "customer_id",
+              "customer_unique_id",
+              "customer_zip_code_prefix",
+              "customer_city",
+              "customer_state"
+            ],
+            "properties": {
+              "customer_id": {
+                "bsonType": "string"
+              },
+              "customer_unique_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "customer_zip_code_prefix": {
+                "bsonType": "string",
+                "pattern": "^[0-9]{5}$"
+              },
+              "customer_city": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "customer_state": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_geolocation_clean": {
+      "documents": 1000163,
+      "bson_md5": "dd375b411f693d96114b50c53b96e6d2",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "geolocation_zip_code_prefix",
+              "geolocation_lat",
+              "geolocation_lng",
+              "geolocation_city",
+              "geolocation_state"
+            ],
+            "properties": {
+              "geolocation_zip_code_prefix": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "geolocation_lat": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "geolocation_lng": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "geolocation_city": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "geolocation_state": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_order_items_clean": {
+      "documents": 112650,
+      "bson_md5": "19f6d7e64af7d282d0b4ad650380e36b",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "order_id": 1,
+            "order_item_id": 1
+          },
+          "name": "order_id_1_order_item_id_1",
+          "unique": true
+        },
+        {
+          "v": 2,
+          "key": {
+            "product_id": 1
+          },
+          "name": "product_id_1"
+        },
+        {
+          "v": 2,
+          "key": {
+            "seller_id": 1
+          },
+          "name": "seller_id_1"
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "order_id",
+              "order_item_id",
+              "product_id",
+              "seller_id",
+              "shipping_limit_date",
+              "price",
+              "freight_value"
+            ],
+            "properties": {
+              "order_id": {
+                "bsonType": "string"
+              },
+              "order_item_id": {
+                "bsonType": "int"
+              },
+              "product_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "seller_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "shipping_limit_date": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "price": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "freight_value": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_order_payments_clean": {
+      "documents": 103886,
+      "bson_md5": "75d5847fb2e7cd64c2b08067a493b2fb",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "order_id": 1,
+            "payment_sequential": 1
+          },
+          "name": "order_id_1_payment_sequential_1",
+          "unique": true
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "order_id",
+              "payment_sequential",
+              "payment_type",
+              "payment_installments",
+              "payment_value"
+            ],
+            "properties": {
+              "order_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "payment_sequential": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "payment_type": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "payment_installments": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "payment_value": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_order_reviews_clean": {
+      "documents": 99224,
+      "bson_md5": "8267d0f8e75594adea2ea53e3292f48e",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "order_id": 1
+          },
+          "name": "order_id_1"
+        },
+        {
+          "v": 2,
+          "key": {
+            "review_id": 1,
+            "order_id": 1
+          },
+          "name": "review_id_1_order_id_1",
+          "unique": true
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "review_id",
+              "order_id",
+              "review_score",
+              "review_comment_title",
+              "review_comment_message",
+              "review_creation_date",
+              "review_answer_timestamp",
+              "review_time_status",
+              "review_before_purchase",
+              "is_duplicate_review_order"
+            ],
+            "properties": {
+              "review_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "order_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "review_score": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "review_comment_title": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "review_comment_message": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "review_creation_date": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "review_answer_timestamp": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "review_time_status": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "review_before_purchase": {
+                "bsonType": "bool"
+              },
+              "is_duplicate_review_order": {
+                "bsonType": "bool"
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_orders_clean": {
+      "documents": 99441,
+      "bson_md5": "0b783222b6b878d51c7a8918b873300e",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "customer_id": 1
+          },
+          "name": "customer_id_1"
+        },
+        {
+          "v": 2,
+          "key": {
+            "order_id": 1
+          },
+          "name": "order_id_1",
+          "unique": true
+        },
+        {
+          "v": 2,
+          "key": {
+            "order_status": 1
+          },
+          "name": "order_status_1"
+        },
+        {
+          "v": 2,
+          "key": {
+            "valid_delay_kpi": 1
+          },
+          "name": "valid_delay_kpi_1"
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "order_id",
+              "customer_id",
+              "order_status",
+              "order_purchase_timestamp",
+              "order_approved_at",
+              "order_delivered_carrier_date",
+              "order_delivered_customer_date",
+              "order_estimated_delivery_date",
+              "delivered_missing_date",
+              "carrier_before_approval",
+              "customer_before_carrier",
+              "valid_delay_kpi"
+            ],
+            "properties": {
+              "order_id": {
+                "bsonType": "string"
+              },
+              "customer_id": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "order_status": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "order_purchase_timestamp": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "order_approved_at": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "order_delivered_carrier_date": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "order_delivered_customer_date": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "order_estimated_delivery_date": {
+                "bsonType": [
+                  "date",
+                  "null"
+                ]
+              },
+              "delivered_missing_date": {
+                "bsonType": "bool"
+              },
+              "carrier_before_approval": {
+                "bsonType": "bool"
+              },
+              "customer_before_carrier": {
+                "bsonType": "bool"
+              },
+              "valid_delay_kpi": {
+                "bsonType": "bool"
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_products_clean": {
+      "documents": 32951,
+      "bson_md5": "9594879c3341318d95bb66915e573c7a",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "product_id": 1
+          },
+          "name": "product_id_1",
+          "unique": true
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "product_id",
+              "product_category_name",
+              "product_name_lenght",
+              "product_description_lenght",
+              "product_photos_qty",
+              "product_weight_g",
+              "product_length_cm",
+              "product_height_cm",
+              "product_width_cm",
+              "category_missing",
+              "weight_zero"
+            ],
+            "properties": {
+              "product_id": {
+                "bsonType": "string"
+              },
+              "product_category_name": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "product_name_lenght": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "product_description_lenght": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "product_photos_qty": {
+                "bsonType": [
+                  "int",
+                  "null"
+                ]
+              },
+              "product_weight_g": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "product_length_cm": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "product_height_cm": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "product_width_cm": {
+                "bsonType": [
+                  "double",
+                  "null"
+                ]
+              },
+              "category_missing": {
+                "bsonType": "bool"
+              },
+              "weight_zero": {
+                "bsonType": "bool"
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "olist_sellers_clean": {
+      "documents": 3095,
+      "bson_md5": "77f5e99c53114897cbc9d1b6d71b3f10",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "seller_id": 1
+          },
+          "name": "seller_id_1",
+          "unique": true
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "seller_id",
+              "seller_zip_code_prefix",
+              "seller_city",
+              "seller_state"
+            ],
+            "properties": {
+              "seller_id": {
+                "bsonType": "string"
+              },
+              "seller_zip_code_prefix": {
+                "bsonType": "string",
+                "pattern": "^[0-9]{5}$"
+              },
+              "seller_city": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              },
+              "seller_state": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    },
+    "product_category_name_translation_clean": {
+      "documents": 71,
+      "bson_md5": "9b58952b087f2f5728cefe108b92d25b",
+      "indexes": [
+        {
+          "v": 2,
+          "key": {
+            "_id": 1
+          },
+          "name": "_id_"
+        },
+        {
+          "v": 2,
+          "key": {
+            "product_category_name": 1
+          },
+          "name": "product_category_name_1",
+          "unique": true
+        }
+      ],
+      "options": {
+        "validator": {
+          "$jsonSchema": {
+            "bsonType": "object",
+            "required": [
+              "product_category_name",
+              "product_category_name_english"
+            ],
+            "properties": {
+              "product_category_name": {
+                "bsonType": "string"
+              },
+              "product_category_name_english": {
+                "bsonType": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "validationLevel": "strict",
+        "validationAction": "error"
+      }
+    }
+  },
+  "all_checks_pass": true,
+  "checks": [
+    "same collection names",
+    "same document counts",
+    "same server BSON dbHash MD5 per collection",
+    "same index definitions",
+    "same validators and options",
+    "source unchanged"
+  ]
+}
