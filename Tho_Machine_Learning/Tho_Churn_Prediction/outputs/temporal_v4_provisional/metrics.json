@@ -1,0 +1,103 @@
+{
+  "rows": 944,
+  "return_0": 48,
+  "no_repurchase_1": 896,
+  "threshold": 0.5,
+  "classification_report": {
+    "0": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 48.0
+    },
+    "1": {
+      "precision": 0.9491525423728814,
+      "recall": 1.0,
+      "f1-score": 0.9739130434782609,
+      "support": 896.0
+    },
+    "accuracy": 0.9491525423728814,
+    "macro avg": {
+      "precision": 0.4745762711864407,
+      "recall": 0.5,
+      "f1-score": 0.48695652173913045,
+      "support": 944.0
+    },
+    "weighted avg": {
+      "precision": 0.9008905486929043,
+      "recall": 0.9491525423728814,
+      "f1-score": 0.924392041267502,
+      "support": 944.0
+    }
+  },
+  "confusion_matrix_actual_rows_predicted_columns_0_1": [
+    [
+      0,
+      48
+    ],
+    [
+      0,
+      896
+    ]
+  ],
+  "top_decile_ranked_by": "churn_probability",
+  "top_decile_count": 95,
+  "top_decile_lift_churn_1": 1.031390977443609,
+  "all_scores_equal": false,
+  "top_decile_ties_at_boundary": 297,
+  "top_decile_tie_policy": "stable input order; constant-score baseline has expected lift 1, no ranking advantage",
+  "roc_auc_churn_1": 0.6420084635416666,
+  "average_precision_churn_1": 0.9665696269275527,
+  "average_precision_repurchase_0": 0.08058383751593876,
+  "version": "temporal_v4_20261029_provisional",
+  "source_status": "Đã dùng master 28/10 và bảng sạch; mốc theo dõi chờ nhóm xác nhận",
+  "master_sha256": "59b98b686c3bde39d50d7502d94637e708b37f20530466917da241aa06344f3e",
+  "clean_orders_sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8",
+  "input_sources": {
+    "master": {
+      "file": "olist_powerbi_orders_master_20261028.csv",
+      "sha256": "59b98b686c3bde39d50d7502d94637e708b37f20530466917da241aa06344f3e"
+    },
+    "clean_orders": {
+      "file": "olist_orders_clean.csv",
+      "sha256": "0ff068032a5951ec71db625660c17d9e2f5bbe2786100be82923241d6a62eaf8"
+    },
+    "clean_payments": {
+      "file": "olist_order_payments_clean.csv",
+      "sha256": "363b3f9bde8ca98f6f36d4a68b24c4a711222df88d13e700d24e65bc8d32e2c3"
+    },
+    "ibge_states": {
+      "file": "ibge_states_raw.json",
+      "sha256": "6b001067b04e037095410ce8d33e11a2d77bf63750354a09608b12f086324f04"
+    },
+    "clean_customers": {
+      "file": "olist_customers_clean.csv",
+      "sha256": "c35df38fc2e81bb648484d14e6681322a256c1b208bce86e1110a22ffb3c39ca"
+    },
+    "clean_items": {
+      "file": "olist_order_items_clean.csv",
+      "sha256": "f150d8ff15bdb615f65698d9bd8ad1b0801c98e13e120d9a10064118845f8301"
+    }
+  },
+  "master_modified_time_utc": "2026-10-28T17:03:28.697657585+00:00",
+  "clean_orders_modified_time_utc": "2026-10-28T17:03:28.487817764+00:00",
+  "observation_end_exclusive": "2018-08-31 00:00:00",
+  "test_t0": "2018-03-01 00:00:00",
+  "train_max_label_end": "2018-02-28 00:00:00",
+  "train_rows": 1427,
+  "train_customers": 495,
+  "train_return_0": 58,
+  "train_no_repurchase_1": 1369,
+  "test_customers": 944,
+  "unevaluated_rows": 0,
+  "train_test_customer_overlap": 21,
+  "selection": "No eligible two-class temporal validation; retain documented RF/0.5 baseline, do not tune on test.",
+  "selected_model": "random_forest",
+  "validation_status": "blocked_insufficient_temporal_validation",
+  "quality_status": "experimental_not_validated_for_deployment",
+  "observation_end_status": "assumed_not_confirmed_by_dataset_provider",
+  "test_previously_reviewed": true,
+  "all_test_predictions_same_class": true,
+  "repurchase_prevalence": 0.05084745762711865,
+  "test_used_for_selection": false
+}

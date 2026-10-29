@@ -1,0 +1,38 @@
+{
+  "name": "Olist Navy BI Theme",
+  "dataColors": [
+    "#2563EB",
+    "#7C3AED",
+    "#0D9488",
+    "#EA8A17",
+    "#DB2777",
+    "#0B1F46",
+    "#3B82F6",
+    "#10B981"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#0B1F46",
+  "tableAccent": "#2563EB",
+  "textClasses": {
+    "callout": {
+      "fontFace": "Segoe UI",
+      "fontSize": 24,
+      "color": "#0B1F46"
+    },
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 14,
+      "color": "#0B1F46"
+    },
+    "header": {
+      "fontFace": "Segoe UI",
+      "fontSize": 11,
+      "color": "#1E293B"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#64748B"
+    }
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "version": "group_bi_web_handover_20261029",
+  "path_base": "directory containing this JSON",
+  "datasets": {
+    "orders": {
+      "file": "olist_powerbi_orders_master.csv",
+      "key": [
+        "order_id"
+      ],
+      "rows": 99441,
+      "columns": [
+        "order_id",
+        "customer_id",
+        "order_status",
+        "order_purchase_timestamp",
+        "order_approved_at",
+        "order_delivered_carrier_date",
+        "order_delivered_customer_date",
+        "order_estimated_delivery_date",
+        "customer_unique_id",
+        "customer_zip_code_prefix",
+        "customer_city",
+        "customer_state",
+        "state_name",
+        "region_name",
+        "main_payment_type",
+        "max_installments",
+        "review_score",
+        "payment_records",
+        "total_products_value",
+        "total_freight_value",
+        "total_items",
+        "segment",
+        "delivery_days",
+        "delay_days",
+        "is_delayed",
+        "order_year_month",
+        "valid_delay_kpi",
+        "delivered_missing_date",
+        "carrier_before_approval",
+        "customer_before_carrier"
+      ],
+      "scope": "all statuses; one order"
+    },
+    "items": {
+      "file": "olist_powerbi_items_master.csv",
+      "key": [
+        "order_id",
+        "order_item_id"
+      ],
+      "rows": 112650,
+      "columns": [
+        "order_id",
+        "order_item_id",
+        "product_id",
+        "seller_id",
+        "shipping_limit_date",
+        "price",
+        "freight_value",
+        "order_status",
+        "order_purchase_timestamp",
+        "category_english",
+        "product_weight_g"
+      ],
+      "scope": "one item line; do not sum order totals after joining"
+    },
+    "rfm": {
+      "file": "rfm_table.csv",
+      "key": [
+        "customer_unique_id"
+      ],
+      "rows": 93358,
+      "columns": [
+        "customer_unique_id",
+        "recency",
+        "frequency",
+        "monetary",
+        "first_order",
+        "last_order",
+        "r_score",
+        "f_score",
+        "m_score",
+        "rfm_segment_code",
+        "segment"
+      ],
+      "scope": "delivered customers before 2018-08-31; manual segmentation"
+    },
+    "ml_test": {
+      "file": "churn_test_predictions_temporal_v4.csv",
+      "key": [
+        "customer_unique_id"
+      ],
+      "rows": 944,
+      "columns": [
+        "customer_unique_id",
+        "split",
+        "cutoff_timestamp",
+        "prediction_window_end",
+        "churn_proxy_180d",
+        "churn_probability",
+        "predicted_churn",
+        "score_decile",
+        "repurchased_true",
+        "repurchase_probability",
+        "prediction_threshold",
+        "model_name",
+        "model_version"
+      ],
+      "scope": "historical test only; not current BI customer scores"
+    },
+    "ml_bi": {
+      "file": "olist_powerbi_customer_snapshot_temporal_v4.csv",
+      "key": [
+        "customer_unique_id"
+      ],
+      "rows": 96089,
+      "columns": [
+        "customer_unique_id",
+        "ml_churn_probability",
+        "ml_score_decile",
+        "ml_risk_level",
+        "ml_eligibility_status",
+        "kmeans_cluster",
+        "kmeans_segment",
+        "kmeans_data_status",
+        "ml_snapshot_cutoff",
+        "ml_model_version",
+        "ml_model_name",
+        "ml_prediction_threshold",
+        "ml_repurchase_probability",
+        "ml_predicted_churn",
+        "ml_eligibility_reason",
+        "ml_quality_status",
+        "ml_risk_label_status",
+        "ml_source_version",
+        "ml_churn_proxy_180d",
+        "ml_label_status_or_reason",
+        "recency",
+        "frequency",
+        "monetary",
+        "first_order",
+        "last_order",
+        "r_score",
+        "f_score",
+        "m_score",
+        "rfm_segment_code",
+        "segment",
+        "rfm_available",
+        "ml_scored",
+        "rfm_reference_date",
+        "bi_snapshot_cutoff_exclusive"
+      ],
+      "scope": "fixed BI snapshot; preserve unscored nulls"
+    }
+  },
+  "upstream_model_contract": "data_contract.json",
+  "upstream_contract_note": "Preserved Tho contract uses upstream filenames; consumers of this package must use datasets above.",
+  "upstream_filename_map": {
+    "test_predictions.csv": "churn_test_predictions_temporal_v4.csv",
+    "bi_web_customers.csv": "olist_powerbi_customer_snapshot_temporal_v4.csv"
+  },
+  "upstream_bi_column_map": {
+    "churn_probability": "ml_churn_probability",
+    "score_decile": "ml_score_decile",
+    "risk_level": "ml_risk_level",
+    "eligibility_status": "ml_eligibility_status",
+    "cutoff_timestamp": "ml_snapshot_cutoff",
+    "model_version": "ml_model_version",
+    "model_name": "ml_model_name",
+    "prediction_threshold": "ml_prediction_threshold",
+    "repurchase_probability": "ml_repurchase_probability",
+    "predicted_churn": "ml_predicted_churn",
+    "eligibility_reason": "ml_eligibility_reason",
+    "model_quality_status": "ml_quality_status",
+    "risk_label_status": "ml_risk_label_status",
+    "source_version": "ml_source_version",
+    "churn_proxy_180d": "ml_churn_proxy_180d",
+    "label_status_or_reason": "ml_label_status_or_reason",
+    "kmeans_cluster": "kmeans_cluster",
+    "kmeans_segment": "kmeans_segment",
+    "kmeans_data_status": "kmeans_data_status"
+  },
+  "cutoffs": {
+    "rfm_reference_date": "2018-08-30",
+    "bi_cutoff_exclusive": "2018-08-31 00:00:00",
+    "ml_test_cutoff": "2018-03-01 00:00:00",
+    "horizon_days": 180
+  },
+  "null_probability": "not scored or outside snapshot; never zero risk",
+  "snapshot_join": "customer_unique_id; one-to-one between customer tables; many-to-one when joining to orders",
+  "test_join": "Do not use historical test scores as BI customer scores.",
+  "manual_rfm_vs_kmeans": "Manual RFM has 6 labels; K-Means has 4 clusters and uses R/F/M, not manual scores.",
+  "quality_status": "experimental_not_validated_for_deployment",
+  "powerbi": "PBIX desktop artifact; configure DataRoot after moving; web integration must be tested separately."
+}

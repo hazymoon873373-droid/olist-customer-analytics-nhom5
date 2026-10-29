@@ -1,0 +1,52 @@
+category,metric,value,expected,status
+File Row Counts,customers_row_count,99441,99441,PASS
+Primary Key Checks,customers_pk_nulls,0,0,PASS
+Primary Key Checks,customers_pk_duplicates,0,0,PASS
+File Row Counts,geolocation_row_count,1000163,1000163,PASS
+File Row Counts,geo_by_zip_row_count,19015,19015,PASS
+Primary Key Checks,geo_by_zip_pk_nulls,0,0,PASS
+Primary Key Checks,geo_by_zip_pk_duplicates,0,0,PASS
+Business Rule Exceptions,geolocation_exact_duplicates,261831,261831,PASS
+Business Rule Exceptions,geo_zip_state_conflict,8,8,PASS
+Geographic Warnings,geo_zip_outlier_coord_warning,8,8,INFO
+Mandatory Geo Integrity,geo_zip_outlier_usable_conflict,0,0,PASS
+File Row Counts,orders_row_count,99441,99441,PASS
+Primary Key Checks,orders_pk_nulls,0,0,PASS
+Primary Key Checks,orders_pk_duplicates,0,0,PASS
+Business Rule Exceptions,orders_delivered_missing_date,8,8,PASS
+Business Rule Exceptions,orders_carrier_before_approval,1359,1359,PASS
+Business Rule Exceptions,orders_customer_before_carrier,23,23,PASS
+Business Rule Exceptions,orders_valid_delay_kpi,95097,95097,PASS
+File Row Counts,order_reviews_row_count,99224,99224,PASS
+Primary Key Checks,order_reviews_pk_nulls,0,0,PASS
+Primary Key Checks,order_reviews_pk_duplicates,0,0,PASS
+Business Rule Exceptions,reviews_before_purchase,64,64,PASS
+Business Rule Exceptions,reviews_same_day_uncertain,10,10,PASS
+Business Rule Exceptions,reviews_composite_key_duplicates,0,0,PASS
+File Row Counts,products_row_count,32951,32951,PASS
+Primary Key Checks,products_pk_nulls,0,0,PASS
+Primary Key Checks,products_pk_duplicates,0,0,PASS
+Business Rule Exceptions,products_category_missing,610,610,PASS
+Business Rule Exceptions,products_weight_zero,4,4,PASS
+File Row Counts,order_items_row_count,112650,112650,PASS
+Primary Key Checks,order_items_pk_nulls,0,0,PASS
+Primary Key Checks,order_items_pk_duplicates,0,0,PASS
+File Row Counts,order_payments_row_count,103886,103886,PASS
+Primary Key Checks,order_payments_pk_nulls,0,0,PASS
+Primary Key Checks,order_payments_pk_duplicates,0,0,PASS
+File Row Counts,sellers_row_count,3095,3095,PASS
+Primary Key Checks,sellers_pk_nulls,0,0,PASS
+Primary Key Checks,sellers_pk_duplicates,0,0,PASS
+File Row Counts,product_category_name_translation_row_count,71,71,PASS
+Primary Key Checks,product_category_translation_pk_nulls,0,0,PASS
+Primary Key Checks,product_category_translation_pk_duplicates,0,0,PASS
+Referential Integrity,orphan_orders_customer_id,0,0,PASS
+Referential Integrity,orphan_items_order_id,0,0,PASS
+Referential Integrity,orphan_items_product_id,0,0,PASS
+Referential Integrity,orphan_items_seller_id,0,0,PASS
+Referential Integrity,orphan_payments_order_id,0,0,PASS
+Referential Integrity,orphan_reviews_order_id,0,0,PASS
+Flag Consistency,review_before_purchase_consistent,True,True,PASS
+Flag Consistency,valid_delay_kpi_consistent,True,True,PASS
+Flag Consistency,product_category_missing_consistent,True,True,PASS
+Overall Audit Summary,overall_audit_passed,True,True,PASS

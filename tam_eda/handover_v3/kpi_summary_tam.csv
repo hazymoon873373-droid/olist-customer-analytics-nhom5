@@ -1,0 +1,26 @@
+﻿metric,value,scope
+orders,99441.0,all source orders
+items,112650.0,all source item lines
+rfm,93358.0,delivered customers before 2018-08-31
+valid_delay,95097.0,valid_delay_kpi=true
+late,7793.0,valid_delay_kpi=true
+missing_review,829.0,all source orders
+missing_estimated,0.0,all source orders
+bad_zip,0.0,all source orders
+median_delivery_valid,10.271782407407407,valid_delay_kpi=true
+csat_on_time,4.293879400033016,valid_delay_kpi=true; on-time; review available
+csat_late,2.5644992134242264,valid_delay_kpi=true; late; review available
+delivered_orders,96478.0,delivered orders
+canceled_orders,625.0,all source orders; canceled only
+unavailable_orders,609.0,all source orders; unavailable only
+canceled_rate,0.006285133898492574,all source orders; fraction 0..1
+unique_customers_all_orders,96096.0,all source orders; distinct customer_unique_id
+delivered_customers,93358.0,customers with at least one delivered order
+repeat_delivered_customers,2801.0,customers with at least two delivered orders
+repeat_delivered_customer_rate,0.03000278497825575,"delivered customers; fraction 0..1; historical, not a future label"
+gmv_products_delivered,13221498.11,delivered orders; BRL; excludes freight
+gross_value_with_freight_delivered,15419773.75,delivered orders; BRL; includes freight; not accounting profit
+aov_products_delivered,137.0415857501192,delivered orders; BRL per order
+aov_with_freight_delivered,159.82683876116835,delivered orders; BRL per order
+avg_review_score_delivered,4.156274892429919,delivered orders with review; invalid early reviews excluded
+late_delivery_rate_valid,0.08194790582247599,valid_delay_kpi=true; fraction 0..1
