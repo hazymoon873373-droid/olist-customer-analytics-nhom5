@@ -190,7 +190,7 @@ def audit(run):
               "olist_records": sum(row["records"] for row in file_stats), "ibge_records": len(states),
               "scope": "5 yêu cầu thu thập của Huy; không chứng nhận điểm hoặc toàn bộ đồ án"}
     verification_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n",
-                                 encoding="utf-8")
+                                 encoding="utf-8", newline="\n")
     report = ["# BIÊN BẢN KIỂM TRA DỮ LIỆU THU THẬP", "",
               f"- Run: `{manifest['run_id']}`",
               f"- Kiểm tra lúc: {result['verified_at_bangkok']} (UTC+7)",
@@ -215,7 +215,7 @@ def audit(run):
                "Theo phạm vi đồ án đã chia, Huy bàn giao raw và hồ sơ nguồn cho Thiên làm ETL/MongoDB.",
                "", "Dữ liệu là lần thu thập mới từ Internet của dataset lịch sử; nội dung đơn hàng vẫn thuộc kỳ dữ liệu Olist công bố. "
                "Kết quả kiểm tra kỹ thuật không thay thế đánh giá cuối cùng của giảng viên.", ""]
-    (run / "BIEN_BAN_KIEM_TRA.md").write_text("\n".join(report), encoding="utf-8")
+    (run / "BIEN_BAN_KIEM_TRA.md").write_text("\n".join(report), encoding="utf-8", newline="\n")
     return result
 
 
