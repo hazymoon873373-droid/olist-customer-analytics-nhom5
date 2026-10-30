@@ -3,26 +3,26 @@
     {
       "Table": "olist_powerbi_items_master",
       "Name": "Total Items Sold",
-      "Expression": "\nCOUNTROWS(olist_powerbi_items_master)",
-      "Format": "0"
+      "Expression": "CALCULATE(COUNTROWS('olist_powerbi_items_master'), KEEPFILTERS('olist_powerbi_orders_master'[order_status] = \"delivered\"))",
+      "Format": "#,##0"
     },
     {
       "Table": "olist_powerbi_items_master",
       "Name": "Total Categories Count",
-      "Expression": "\nDISTINCTCOUNT(olist_powerbi_items_master[category_english])",
-      "Format": "0"
+      "Expression": "CALCULATE(DISTINCTCOUNT('olist_powerbi_items_master'[category_english]), KEEPFILTERS('olist_powerbi_orders_master'[order_status] = \"delivered\"))",
+      "Format": "#,##0"
     },
     {
       "Table": "olist_powerbi_items_master",
       "Name": "Avg Items Per Order",
-      "Expression": "\nDIVIDE(\n    COUNT(olist_powerbi_items_master[order_item_id]), \n    DISTINCTCOUNT(olist_powerbi_orders_master[order_id]), \n    0\n)",
+      "Expression": "DIVIDE([Total Items Sold], [Đơn đã giao])",
       "Format": "0.00"
     },
     {
       "Table": "olist_powerbi_items_master",
       "Name": "Credit Card Payment Rate",
       "Expression": "\nVAR CreditOrders = \n    CALCULATE(\n        COUNTROWS(olist_powerbi_orders_master), \n        olist_powerbi_orders_master[main_payment_type] = \"credit_card\"\n    )\nVAR TotalOrders = COUNTROWS(olist_powerbi_orders_master)\nRETURN \nDIVIDE(CreditOrders, TotalOrders, 0)",
-      "Format": ""
+      "Format": "0.00%"
     },
     {
       "Table": "olist_powerbi_items_master",
@@ -34,13 +34,13 @@
       "Table": "olist_powerbi_items_master",
       "Name": "Delayed Delivery Rate",
       "Expression": "[Late Delivery Rate (Valid)]",
-      "Format": ""
+      "Format": "0.00%"
     },
     {
       "Table": "olist_powerbi_items_master",
       "Name": "Avg CSAT Score",
       "Expression": "CALCULATE(AVERAGE('olist_powerbi_orders_master'[review_score]), 'olist_powerbi_orders_master'[valid_delay_kpi] = TRUE())",
-      "Format": ""
+      "Format": "0.00"
     },
     {
       "Table": "olist_powerbi_items_master",
@@ -52,7 +52,7 @@
       "Table": "olist_powerbi_orders_master",
       "Name": "Số đơn hàng",
       "Expression": "DISTINCTCOUNT(olist_powerbi_orders_master[order_id])",
-      "Format": "0"
+      "Format": "#,##0"
     },
     {
       "Table": "olist_powerbi_orders_master",
@@ -75,14 +75,14 @@
     {
       "Table": "olist_powerbi_orders_master",
       "Name": "AOV",
-      "Expression": "DIVIDE([Doanh thu sản phẩm], [Số đơn hàng], 0)",
-      "Format": ""
+      "Expression": "DIVIDE([Doanh thu sản phẩm], [Đơn đã giao])",
+      "Format": "#,##0.00"
     },
     {
       "Table": "olist_powerbi_orders_master",
       "Name": "Doanh thu sản phẩm",
-      "Expression": "SUM(olist_powerbi_items_master[price])",
-      "Format": "0.00"
+      "Expression": "CALCULATE(SUM('olist_powerbi_items_master'[price]), KEEPFILTERS('olist_powerbi_orders_master'[order_status] = \"delivered\"))",
+      "Format": "#,##0.00"
     },
     {
       "Table": "olist_powerbi_orders_master",
@@ -157,58 +157,82 @@
       "Format": "0"
     },
     {
+      "Table": "olist_powerbi_orders_master",
+      "Name": "Đơn đã giao",
+      "Expression": "CALCULATE([Số đơn hàng], KEEPFILTERS('olist_powerbi_orders_master'[order_status] = \"delivered\"))",
+      "Format": "#,##0"
+    },
+    {
+      "Table": "olist_powerbi_orders_master",
+      "Name": "Mean Delivery Days (Valid)",
+      "Expression": "CALCULATE(AVERAGE('olist_powerbi_orders_master'[delivery_days]), KEEPFILTERS('olist_powerbi_orders_master'[valid_delay_kpi] = TRUE()))",
+      "Format": "0.00"
+    },
+    {
+      "Table": "olist_powerbi_orders_master",
+      "Name": "Mean Review (Valid)",
+      "Expression": "CALCULATE(AVERAGE('olist_powerbi_orders_master'[review_score]), KEEPFILTERS('olist_powerbi_orders_master'[valid_delay_kpi] = TRUE()))",
+      "Format": "0.00"
+    },
+    {
       "Table": "rfm_table",
       "Name": "Total Segments Count",
-      "Expression": "\"6 Nhóm\"",
-      "Format": ""
+      "Expression": "DISTINCTCOUNT('rfm_table'[segment])",
+      "Format": "0"
     },
     {
       "Table": "rfm_table",
       "Name": "Champions Count",
       "Expression": "\nCALCULATE(\n    COUNTROWS(rfm_table), \n    rfm_table[segment] = \"Champions (VIP)\"\n)",
-      "Format": "0"
+      "Format": "#,##0"
     },
     {
       "Table": "rfm_table",
       "Name": "Need Attention Count",
       "Expression": "\nCALCULATE(\n    COUNTROWS(rfm_table), \n    rfm_table[segment] = \"Need Attention (Cần chú ý)\")",
-      "Format": "0.00"
+      "Format": "#,##0"
     },
     {
       "Table": "rfm_table",
       "Name": "Lost Customers Count",
       "Expression": "\nCALCULATE(\n    COUNTROWS(rfm_table), \n    rfm_table[segment] = \"Lost / Hibernating (Ngủ đông / Đã mất)\"\n)",
-      "Format": "0.00"
+      "Format": "#,##0"
     },
     {
       "Table": "rfm_table",
       "Name": "One Time Customers",
       "Expression": "CALCULATE(DISTINCTCOUNT(rfm_table[customer_unique_id]), rfm_table[frequency] = 1)",
-      "Format": "0"
+      "Format": "#,##0"
     },
     {
       "Table": "rfm_table",
       "Name": "Repeat Purchase Rate",
       "Expression": "\nVAR RepeatCust = CALCULATE(DISTINCTCOUNT(rfm_table[customer_unique_id]), rfm_table[frequency] > 1)\nVAR TotalCust = DISTINCTCOUNT(rfm_table[customer_unique_id])\nRETURN DIVIDE(RepeatCust, TotalCust, 0)",
-      "Format": "0.00%;-0.00%;0.00%"
+      "Format": "0.00%"
     },
     {
       "Table": "rfm_table",
       "Name": "Total Unique Customers",
       "Expression": "DISTINCTCOUNT(rfm_table[customer_unique_id])",
-      "Format": "#,0.00"
+      "Format": "#,##0"
     },
     {
       "Table": "rfm_table",
       "Name": "Customer Lifetime Value",
       "Expression": "DIVIDE(SUM(rfm_table[monetary]), [Total Unique Customers], 0)",
-      "Format": ""
+      "Format": "#,##0.00"
     },
     {
       "Table": "rfm_table",
       "Name": "Khach_Cham_Diem_ML",
       "Expression": "\nCALCULATE(\n    DISTINCTCOUNT(olist_powerbi_customer_snapshot_temporal_v4[customer_unique_id]),\n    olist_powerbi_customer_snapshot_temporal_v4[ml_scored] = TRUE\n)",
       "Format": "0"
+    },
+    {
+      "Table": "rfm_table",
+      "Name": "Repeat Customers",
+      "Expression": "CALCULATE(DISTINCTCOUNT('rfm_table'[customer_unique_id]), KEEPFILTERS('rfm_table'[frequency] > 1))",
+      "Format": "#,##0"
     },
     {
       "Table": "Table",
@@ -237,66 +261,144 @@
     {
       "Table": "Calendar",
       "Name": "ML Khách hàng được chấm",
-      "Expression": "\nCALCULATE(\n    DISTINCTCOUNT('olist_powerbi_customer_snapshot_temporal_v4'[customer_unique_id]),\n    'olist_powerbi_customer_snapshot_temporal_v4'[ml_scored] = TRUE()\n)",
-      "Format": "0"
+      "Expression": "CALCULATE(DISTINCTCOUNT('olist_powerbi_customer_snapshot_temporal_v4'[customer_unique_id]), REMOVEFILTERS(), 'olist_powerbi_customer_snapshot_temporal_v4'[ml_scored] = TRUE())",
+      "Format": "#,##0"
     },
     {
       "Table": "Calendar",
       "Name": "ML Khách hàng chưa được chấm",
-      "Expression": "\nCALCULATE(\n    DISTINCTCOUNT('olist_powerbi_customer_snapshot_temporal_v4'[customer_unique_id]),\n    'olist_powerbi_customer_snapshot_temporal_v4'[ml_scored] = FALSE()\n)",
-      "Format": "0"
+      "Expression": "CALCULATE(DISTINCTCOUNT('olist_powerbi_customer_snapshot_temporal_v4'[customer_unique_id]), REMOVEFILTERS(), 'olist_powerbi_customer_snapshot_temporal_v4'[ml_scored] = FALSE())",
+      "Format": "#,##0"
     },
     {
       "Table": "Calendar",
       "Name": "ML Xác suất không mua lại TB",
-      "Expression": "\nCALCULATE(\n    AVERAGE('olist_powerbi_customer_snapshot_temporal_v4'[ml_churn_probability]),\n    'olist_powerbi_customer_snapshot_temporal_v4'[ml_scored] = TRUE()\n)",
-      "Format": ""
+      "Expression": "CALCULATE(AVERAGE('olist_powerbi_customer_snapshot_temporal_v4'[ml_churn_probability]), REMOVEFILTERS(), 'olist_powerbi_customer_snapshot_temporal_v4'[ml_scored] = TRUE())",
+      "Format": "0.00%"
+    },
+    {
+      "Table": "Calendar",
+      "Name": "ML ROC-AUC test",
+      "Expression": "VAR T = FILTER(CALCULATETABLE('churn_test_predictions_temporal_v4', REMOVEFILTERS()), 'churn_test_predictions_temporal_v4'[split] = \"test\")\nVAR Pos = FILTER(T, [churn_proxy_180d] = 1)\nVAR Neg = FILTER(T, [churn_proxy_180d] = 0)\nRETURN DIVIDE(SUMX(Pos, VAR S = [churn_probability] RETURN COUNTROWS(FILTER(Neg, [churn_probability] < S)) + 0.5 * COUNTROWS(FILTER(Neg, [churn_probability] = S))), COUNTROWS(Pos) * COUNTROWS(Neg))",
+      "Format": "0.0000"
+    },
+    {
+      "Table": "Calendar",
+      "Name": "ML AP mua lại test",
+      "Expression": "VAR T = FILTER(CALCULATETABLE('churn_test_predictions_temporal_v4', REMOVEFILTERS()), 'churn_test_predictions_temporal_v4'[split] = \"test\")\nVAR Pos = FILTER(T, [repurchased_true] = 1)\nVAR Scores = DISTINCT(SELECTCOLUMNS(Pos, \"S\", [repurchase_probability]))\nRETURN SUMX(Scores, VAR S = [S] VAR Hits = COUNTROWS(FILTER(Pos, [repurchase_probability] >= S)) VAR Selected = COUNTROWS(FILTER(T, [repurchase_probability] >= S)) VAR Delta = DIVIDE(COUNTROWS(FILTER(Pos, [repurchase_probability] = S)), COUNTROWS(Pos)) RETURN DIVIDE(Hits, Selected) * Delta)",
+      "Format": "0.0000"
+    },
+    {
+      "Table": "Calendar",
+      "Name": "ML Lift top 10 test",
+      "Expression": "VAR T = FILTER(CALCULATETABLE('churn_test_predictions_temporal_v4', REMOVEFILTERS()), 'churn_test_predictions_temporal_v4'[split] = \"test\")\nVAR K = ROUNDUP(COUNTROWS(T) * 0.1, 0)\nVAR TopCustomers = TOPN(K, T, [churn_probability], DESC, [customer_unique_id], ASC)\nRETURN DIVIDE(AVERAGEX(TopCustomers, [churn_proxy_180d]), AVERAGEX(T, [churn_proxy_180d]))",
+      "Format": "0.0000"
+    },
+    {
+      "Table": "Calendar",
+      "Name": "ML Test N",
+      "Expression": "VAR T = FILTER(CALCULATETABLE('churn_test_predictions_temporal_v4', REMOVEFILTERS()), 'churn_test_predictions_temporal_v4'[split] = \"test\")\nRETURN COUNTROWS(T)",
+      "Format": "#,##0"
     }
   ],
   "CalculatedColumns": [
     {
+      "Table": "DateTableTemplate_1a927c0e-6523-4c38-a7fd-667b4bcaa74b",
+      "Name": "Year",
+      "Expression": "YEAR([Date])",
+      "DataType": "Int64",
+      "Format": ""
+    },
+    {
+      "Table": "DateTableTemplate_1a927c0e-6523-4c38-a7fd-667b4bcaa74b",
+      "Name": "MonthNo",
+      "Expression": "MONTH([Date])",
+      "DataType": "Int64",
+      "Format": ""
+    },
+    {
+      "Table": "DateTableTemplate_1a927c0e-6523-4c38-a7fd-667b4bcaa74b",
+      "Name": "Month",
+      "Expression": "FORMAT([Date], \"MMMM\")",
+      "DataType": "String",
+      "Format": ""
+    },
+    {
+      "Table": "DateTableTemplate_1a927c0e-6523-4c38-a7fd-667b4bcaa74b",
+      "Name": "QuarterNo",
+      "Expression": "INT(([MonthNo] + 2) / 3)",
+      "DataType": "Int64",
+      "Format": ""
+    },
+    {
+      "Table": "DateTableTemplate_1a927c0e-6523-4c38-a7fd-667b4bcaa74b",
+      "Name": "Quarter",
+      "Expression": "\"Qtr \" & [QuarterNo]",
+      "DataType": "String",
+      "Format": ""
+    },
+    {
+      "Table": "DateTableTemplate_1a927c0e-6523-4c38-a7fd-667b4bcaa74b",
+      "Name": "Day",
+      "Expression": "DAY([Date])",
+      "DataType": "Int64",
+      "Format": ""
+    },
+    {
       "Table": "olist_powerbi_orders_master",
       "Name": "Delivery_Status",
       "Expression": "\n\nVAR IsDelayed = olist_powerbi_orders_master[is_delayed]\nRETURN\nIF(\n    ISBLANK(IsDelayed),\n    \"Không đủ dữ liệu đánh giá\",\n    IF(IsDelayed = TRUE(), \"Giao trễ hạn\", \"Giao đúng hạn\")\n)",
+      "DataType": "String",
       "Format": ""
     },
     {
       "Table": "olist_powerbi_orders_master",
       "Name": "State",
       "Expression": "olist_powerbi_orders_master[customer_state]",
+      "DataType": "String",
       "Format": ""
     },
     {
       "Table": "olist_powerbi_orders_master",
       "Name": "Delivery_Days_Group",
       "Expression": "\nVAR Days = 'olist_powerbi_orders_master'[delivery_days]\nVAR IsValid = 'olist_powerbi_orders_master'[valid_delay_kpi]\nRETURN\nIF(\n    ISBLANK(Days) || IsValid <> TRUE(),\n    \"Không đủ dữ liệu đánh giá\",\n    SWITCH(\n        TRUE(),\n        Days <= 5, \"0-5\",\n        Days <= 10, \"6-10\",\n        Days <= 15, \"11-15\",\n        Days <= 20, \"16-20\",\n        Days <= 25, \"21-25\",\n        Days <= 30, \"26-30\",\n        Days <= 35, \"31-35\",\n        Days <= 40, \"36-40\",\n        Days <= 45, \"41-45\",\n        Days <= 50, \"46-50\",\n        \">50\"\n    )\n)",
+      "DataType": "String",
       "Format": ""
     },
     {
       "Table": "olist_powerbi_orders_master",
       "Name": "OrderDate",
       "Expression": "DATE(YEAR('olist_powerbi_orders_master'[order_purchase_timestamp]), MONTH('olist_powerbi_orders_master'[order_purchase_timestamp]), DAY('olist_powerbi_orders_master'[order_purchase_timestamp]))",
+      "DataType": "DateTime",
       "Format": "yyyy-MM-dd"
     },
     {
       "Table": "rfm_table",
       "Name": "Customer_Type",
       "Expression": "IF(rfm_table[frequency] > 1, \"Khách mua lại (>= 2 lần)\", \"Khách mua 1 lần\")",
+      "DataType": "String",
       "Format": ""
     },
     {
       "Table": "rfm_table",
       "Name": "Churn_Risk_Level",
-      "Expression": "\nSWITCH(\n    TRUE(),\n    rfm_table[recency] <= 180, \"Nguy cơ thấp (Low)\",\n    rfm_table[recency] <= 365, \"Nguy cơ trung bình (Medium)\",\n    \"Nguy cơ cao (High)\"\n)",
+      "Expression": "SWITCH(TRUE(), 'rfm_table'[recency] <= 180, \"01. Chưa quá 180 ngày\", 'rfm_table'[recency] <= 365, \"02. Từ 181 đến 365 ngày\", \"03. Trên 365 ngày\")",
+      "DataType": "String",
       "Format": ""
     },
     {
       "Table": "rfm_table",
       "Name": "Churn_Risk_Order",
-      "Expression": "\nSWITCH(\n    rfm_table[Churn_Risk_Level],\n    \"Nguy cơ thấp (Low)\", 1,\n    \"Nguy cơ trung bình (Medium)\", 2,\n    \"Nguy cơ cao (High)\", 3,\n    4\n)",
+      "Expression": "SWITCH(TRUE(), 'rfm_table'[recency] <= 180, 1, 'rfm_table'[recency] <= 365, 2, 3)",
+      "DataType": "Int64",
       "Format": "0"
+    },
+    {
+      "Table": "olist_powerbi_customer_snapshot_temporal_v4",
+      "Name": "ML Trạng thái hiển thị",
+      "Expression": "IF(NOT('olist_powerbi_customer_snapshot_temporal_v4'[ml_scored]), \"Chưa đủ điều kiện chấm\", \"Điểm nguy cơ cao - thử nghiệm\")",
+      "DataType": "String",
+      "Format": ""
     }
-  ],
-  "CalendarRelationship": "Calendar.Date -> orders.OrderDate; active; one direction",
-  "ModelStatus": "experimental_not_validated_for_deployment"
+  ]
 }

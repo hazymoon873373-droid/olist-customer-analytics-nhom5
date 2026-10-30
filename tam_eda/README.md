@@ -46,6 +46,8 @@ Khi chuyển sang máy hoặc vị trí khác: Transform data → Edit parameter
 - RFM: 93.358 khách delivered, reference 30/08/2018, đơn trước 31/08. Đối soát R/F/M lõi trước khi giữ điểm và 6 nhóm quy tắc trong rfm_reference.csv. K-Means gồm 4 cụm riêng và dùng R/F/M, không dùng điểm RFM quy tắc.
 - Cohort: delivered đến hết tháng 08/2018, tuổi tháng 0–23. CSV retention 0–1; kỳ đã quan sát không mua lại là 0, tương lai chưa quan sát là blank.
 - Snapshot RFM/ML cố định; bộ lọc ngày không tự tính lại mô hình tại cutoff mới. Biểu đồ review/giao trễ mô tả liên hệ, không chứng minh nhân quả.
+- Trang 2 và Trang 5 ghi rõ phạm vi cố định, không có slicer ngày/bang. Slicer trên các trang 1, 3, 4 dùng ngày đặt đơn và bang của khách. Top 5 bang được trình bày bằng biểu đồ thanh để không phụ thuộc quyền Azure Maps.
+- Trang 5 phân biệt 6 nhóm RFM với 4 cụm K-Means. Kích thước bong bóng cộng số khách; Recency mô tả thời gian chưa mua. Nhóm chưa được chấm giữ trạng thái riêng. Các thẻ ROC-AUC, AP mua lại và Lift tính từ 944 khách test, độc lập với snapshot BI; Lift xếp theo điểm không mua lại, mã khách tăng dần khi bằng điểm.
 
 ## Dữ liệu bàn giao web và kết quả ML
 
