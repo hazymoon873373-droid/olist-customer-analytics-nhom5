@@ -1,13 +1,13 @@
 {
   "run_id": "20261019T171446Z_e35970",
-  "run_path": "D:\\Big Data\\olist-customer-analytics-nhom5\\Huy_ThuThap_Olist\\dataset\\runs\\20261019T171446Z_e35970",
-  "verified_at_bangkok": "2026-10-24T23:25:40.060999+07:00",
+  "run_path": "dataset/runs/20261019T171446Z_e35970",
+  "verified_at_bangkok": "2026-10-30T21:23:28.885115+07:00",
   "all_passed": true,
   "checks": [
     {
       "check": "Thư mục dữ liệu đang mở tồn tại",
       "passed": true,
-      "evidence": "D:\\Big Data\\olist-customer-analytics-nhom5\\Huy_ThuThap_Olist\\dataset\\runs\\20261019T171446Z_e35970"
+      "evidence": "dataset/runs/20261019T171446Z_e35970"
     },
     {
       "check": "Đường dẫn bàn giao tương đối trỏ đúng dữ liệu",
@@ -17,17 +17,17 @@
     {
       "check": "F5 trỏ đúng mã nguồn sau khi dọn",
       "passed": true,
-      "evidence": "D:\\Big Data\\olist-customer-analytics-nhom5\\Huy_ThuThap_Olist\\source-code\\collect_all.py"
+      "evidence": "source-code/collect_all.py"
     },
     {
-      "check": "Tải Olist qua HTTPS từ Kaggle",
+      "check": "Có ZIP Olist nguồn để tái lập",
       "passed": true,
-      "evidence": "https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce"
+      "evidence": "tải mới từ Kaggle"
     },
     {
-      "check": "Gọi IBGE API trực tiếp",
+      "check": "Nguồn địa lý có 27 UF và provenance",
       "passed": true,
-      "evidence": "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome"
+      "evidence": "https_api; endpoint=https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome; snapshot=n/a"
     },
     {
       "check": "Trạng thái chạy hoàn tất",
@@ -35,7 +35,7 @@
       "evidence": "Run 20261019T171446Z_e35970; kết thúc 2026-10-19T17:14:57.198059+00:00"
     },
     {
-      "check": "ZIP gốc đúng checksum HTTP",
+      "check": "ZIP gốc khớp checksum đã ghi",
       "passed": true,
       "evidence": "967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784"
     },
@@ -85,9 +85,9 @@
       "evidence": "71 record, 2,613 byte; CSV nguyên vẹn so với ZIP và manifest"
     },
     {
-      "check": "Lưu response IBGE và JSON raw nguyên vẹn",
+      "check": "Lưu dữ liệu API địa lý và provenance nguyên vẹn",
       "passed": true,
-      "evidence": "27 record; 2,446 byte JSON"
+      "evidence": "27 record; 2,446 byte JSON; response trực tiếp khớp HTTP receipt"
     },
     {
       "check": "Nguồn phụ ghép được với Olist",

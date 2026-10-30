@@ -33,8 +33,9 @@ def audit(run):
     def check(name, passed, evidence):
         checks.append({"check": name, "passed": bool(passed), "evidence": evidence})
 
+    rel_run = run.relative_to(PROJECT_ROOT).as_posix() if run.is_relative_to(PROJECT_ROOT) else str(run)
     check("Thư mục dữ liệu đang mở tồn tại", run.is_dir()
-          and (run / "raw/olist").is_dir() and (run / "raw/ibge").is_dir(), str(run))
+          and (run / "raw/olist").is_dir() and (run / "raw/ibge").is_dir(), rel_run)
     if run.is_relative_to(PROJECT_ROOT / "dataset"):
         dataset = PROJECT_ROOT / "dataset"
         pointer = json.loads((dataset / "latest_success.json").read_text(encoding="utf-8"))
@@ -44,8 +45,10 @@ def audit(run):
               f"dataset/latest_success.json -> {pointer['run_path']}")
         launch = json.loads((PROJECT_ROOT / ".vscode/launch.json").read_text(encoding="utf-8"))
         program = Path(launch["configurations"][0]["program"].replace("${workspaceFolder}", str(PROJECT_ROOT)))
-        check("F5 trỏ đúng mã nguồn sau khi dọn", program.resolve() == (ROOT / "collect_all.py").resolve()
-              and program.is_file(), str(program))
+        resolved_prog = program.resolve()
+        rel_prog = resolved_prog.relative_to(PROJECT_ROOT).as_posix() if resolved_prog.is_relative_to(PROJECT_ROOT) else str(program)
+        check("F5 trỏ đúng mã nguồn sau khi dọn", resolved_prog == (ROOT / "collect_all.py").resolve()
+              and program.is_file(), rel_prog)
 
     olist, ibge = manifest["olist"], manifest["ibge"]
     olist_live = olist.get("mode") == "https_kaggle_download" and olist.get("http_receipt", {}).get("http_status") == 200
@@ -169,13 +172,25 @@ def audit(run):
         "THONG_TIN_DU_LIEU.md", "logs/collection.log"))
         and "HOÀN THÀNH" in log, "Có log đầy đủ 5 bước và thông tin dữ liệu")
 
-    result = {"run_id": manifest["run_id"], "run_path": str(run),
-              "verified_at_bangkok": datetime.now(timezone(timedelta(hours=7))).isoformat(),
+    verification_path = run / "metadata/verification.json"
+    verified_at = datetime.now(timezone(timedelta(hours=7))).isoformat()
+    if verification_path.is_file():
+        try:
+            prior = json.loads(verification_path.read_text(encoding="utf-8"))
+            if (prior.get("run_id") == manifest["run_id"]
+                    and prior.get("run_path") == rel_run
+                    and prior.get("checks") == checks
+                    and prior.get("all_passed") == all(row["passed"] for row in checks)):
+                verified_at = prior.get("verified_at_bangkok", verified_at)
+        except (OSError, json.JSONDecodeError):
+            pass
+    result = {"run_id": manifest["run_id"], "run_path": rel_run,
+              "verified_at_bangkok": verified_at,
               "all_passed": all(row["passed"] for row in checks), "checks": checks,
               "olist_records": sum(row["records"] for row in file_stats), "ibge_records": len(states),
               "scope": "5 yêu cầu thu thập của Huy; không chứng nhận điểm hoặc toàn bộ đồ án"}
-    (run / "metadata/verification.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n",
-                                                    encoding="utf-8")
+    verification_path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n",
+                                 encoding="utf-8")
     report = ["# BIÊN BẢN KIỂM TRA DỮ LIỆU THU THẬP", "",
               f"- Run: `{manifest['run_id']}`",
               f"- Kiểm tra lúc: {result['verified_at_bangkok']} (UTC+7)",
@@ -188,7 +203,9 @@ def audit(run):
                "Các cửa sổ, liên kết hoặc log cũ trỏ tới `data/runs/` cần mở lại ở đường dẫn hiện tại. "
                "Không cần tải lại dữ liệu để khắc phục thông báo Location is not available.", "",
                ("Đã lưu 9 CSV Olist và dữ liệu IBGE; lượt chạy này đã gọi API trực tiếp."
-                if manifest.get("ibge", {}).get("mode") == "https_api" else
+                if ibge_mode == "https_api" else
+                "Đã lưu 9 CSV Olist và 27 UF từ Geocoded API trực tiếp kèm vùng tham chiếu IBGE; chi tiết ở source_manifest.json."
+                if ibge_mode == "geocoded_api_with_ibge_region_reference" else
                 "Đã lưu 9 CSV Olist và snapshot IBGE đã xác minh; lượt chạy này không truy cập được API trực tiếp, chi tiết ở source_manifest.json."),
                "", "Đối chiếu LabF: có 2 nguồn, có chương trình thu thập, dữ liệu trên 5.000 record. "
                "Phần lưu DBMS, làm sạch, thiết kế MongoDB và phân tích/ML cần nhóm tiếp tục thực hiện theo phân công.",

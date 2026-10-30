@@ -1,10 +1,30 @@
 [theme]
 base = "light"
-primaryColor = "#1b6c80"
-backgroundColor = "#edf4f7"
-secondaryBackgroundColor = "#ffffff"
-textColor = "#182c35"
 font = "sans serif"
+
+[theme.light]
+primaryColor = "#0f766e"
+backgroundColor = "#f3f6fb"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#172b43"
+
+[theme.dark]
+primaryColor = "#2dd4bf"
+backgroundColor = "#0d1726"
+secondaryBackgroundColor = "#162438"
+textColor = "#e6edf7"
+
+[theme.light.sidebar]
+primaryColor = "#5eead4"
+backgroundColor = "#142a42"
+secondaryBackgroundColor = "#203c53"
+textColor = "#edf5ff"
+
+[theme.dark.sidebar]
+primaryColor = "#5eead4"
+backgroundColor = "#0a1321"
+secondaryBackgroundColor = "#15263b"
+textColor = "#edf5ff"
 
 [browser]
 gatherUsageStats = false
