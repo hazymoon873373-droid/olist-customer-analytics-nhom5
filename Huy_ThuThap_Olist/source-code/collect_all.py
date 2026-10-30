@@ -16,6 +16,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 import uuid
 import zipfile
 from datetime import datetime, timezone
@@ -195,6 +196,45 @@ def validate_ibge(data):
     return codes
 
 
+def fetch_geocoded_states(timeout, raw_dir, region_snapshot):
+    """Nguồn dự phòng cho danh sách UF; giữ payload từng trang và nguồn vùng IBGE."""
+    base = "https://api.geocoded.me/v2/countries/BR/states"
+    pages, states, cursor, expected_total = [], [], None, None
+    for page_no in range(1, 5):
+        url = base if cursor is None else base + "?cursor=" + urllib.parse.quote(cursor, safe="")
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw = response.read(MAX_API + 1)
+            if len(raw) > MAX_API:
+                raise ValueError("Geocoded response vượt giới hạn kích thước")
+        document = json.loads(raw.decode("utf-8-sig"))
+        payload = document.get("data")
+        meta = document.get("meta", {})
+        if not isinstance(payload, list) or not isinstance(meta.get("total"), int):
+            raise ValueError("Geocoded trả cấu trúc JSON không hợp lệ")
+        expected_total = meta["total"] if expected_total is None else expected_total
+        if meta["total"] != expected_total:
+            raise ValueError("Tổng số bản ghi Geocoded thay đổi giữa các trang")
+        (raw_dir / f"geocoded_states_page_{page_no:02d}.json").write_bytes(raw)
+        pages.append({"file": f"geocoded_states_page_{page_no:02d}.json", "sha256": hashlib.sha256(raw).hexdigest(), "records": len(payload)})
+        states.extend(payload)
+        cursor = meta.get("cursor") if meta.get("hasMore") else None
+        if not cursor:
+            break
+    if len(states) != expected_total or expected_total != 27:
+        raise ValueError(f"Geocoded cần đúng 27 UF; nhận {len(states)}/{expected_total}")
+    region_by_code = {row["sigla"]: row for row in region_snapshot}
+    normalized = []
+    for item in states:
+        code = item.get("stateCode")
+        ref = region_by_code.get(code)
+        if not ref or not item.get("name"):
+            raise ValueError(f"Thiếu mã/tên UF hoặc mapping vùng IBGE: {code}")
+        normalized.append({"id": ref["id"], "sigla": code, "nome": item["name"], "regiao": ref["regiao"]})
+    validate_ibge(normalized)
+    return normalized, pages, expected_total
+
+
 def inspect_customer_coverage(customers_path, state_codes):
     matched, total, unknown = 0, 0, set()
     with Path(customers_path).open(encoding="utf-8-sig", newline="") as stream:
@@ -224,9 +264,9 @@ def create_reports(run, manifest):
         "description": row["description"],
     } for row in files]
     api = manifest["ibge"]
-    if api["status"] == "success":
+    if api.get("record_count"):
         summary_rows.append({
-            "source": "IBGE API", "file_name": "ibge_states_raw.json",
+            "source": api.get("source_label", "IBGE API"), "file_name": "ibge_states_raw.json",
             "record_count": api["record_count"], "column_count": len(IBGE_FIELDS),
             "file_size_bytes": api["json_bytes"], "sha256": api["json_sha256"],
             "description": "27 đơn vị liên bang Brazil, gồm bang/đặc khu và 5 vùng lớn",
@@ -239,7 +279,7 @@ def create_reports(run, manifest):
         for column, dtype, description in spec["fields"]:
             dictionary.append({"source": "Olist", "file": name, "column": column,
                                "suggested_etl_type": dtype, "description_vi": description})
-    if api["status"] == "success":
+    if api.get("record_count"):
         dictionary.extend({"source": "IBGE", "file": "ibge_states_raw.json", "column": col,
                            "suggested_etl_type": dtype, "description_vi": desc}
                           for col, dtype, desc in IBGE_FIELDS)
@@ -289,9 +329,11 @@ def create_reports(run, manifest):
               "- Nhận diện khách mua lại bằng customer_unique_id, liên kết đơn qua customer_id.",
               "- Thiên tiếp nhận raw để làm sạch/ETL/MongoDB; Thọ phụ trách nhãn và ML; Tâm phụ trách BI.",
               "- Không cộng lại giá trị sau các phép join 1-n nếu chưa tổng hợp về đúng cấp đơn hàng.",
-              "- Dữ liệu IBGE được lấy ở thời điểm chạy hiện tại, dùng làm bảng tham chiếu địa lý."]
+              "- Xem source_manifest.json để phân biệt API IBGE trực tiếp, API Geocoded thay thế và snapshot địa lý đã lưu."]
     if manifest["errors"]:
         lines += ["", "## Lỗi cần xử lý", ""] + [f"- {x}" for x in manifest["errors"]]
+    if manifest.get("warnings"):
+        lines += ["", "## Cảnh báo nguồn", ""] + [f"- {x}" for x in manifest["warnings"]]
     report = "\n".join(lines) + "\n"
     (run / "THONG_TIN_DU_LIEU.md").write_text(report, encoding="utf-8")
 
@@ -316,6 +358,7 @@ def collect(output_root, timeout=45, local_zip=None):
         "collector": "Nguyen Gia Huy - Nhom 5 - ABDA433708", "errors": [],
         "olist": {"status": "pending", "source_page": KAGGLE_PAGE, "files": []},
         "ibge": {"status": "pending", "documentation": IBGE_DOCS, "endpoint": IBGE_URL},
+        "warnings": [],
     }
     LOG.info("BẮT ĐẦU THU THẬP - run %s", run_id)
     LOG.info("Thư mục kết quả: %s", run)
@@ -371,18 +414,74 @@ def collect(output_root, timeout=45, local_zip=None):
             manifest["join_coverage"] = inspect_customer_coverage(customers, state_codes)
             LOG.info("Ghép customer_state với sigla: %.2f%%", manifest["join_coverage"]["coverage_percent"])
     except Exception as exc:
-        manifest["ibge"]["status"] = "failed"
-        manifest["errors"].append(f"IBGE: {type(exc).__name__}: {exc}")
-        LOG.exception("Bước API IBGE thất bại")
+        LOG.warning("API IBGE trực tiếp không truy cập được: %s: %s", type(exc).__name__, exc)
+        try:
+            data_root = output_root.parent
+            pointer = json.loads((data_root / "latest_success.json").read_text(encoding="utf-8"))
+            prior_run = (data_root / pointer["run_path"]).resolve()
+            if data_root.resolve() not in prior_run.parents:
+                raise ValueError("Đường dẫn snapshot nằm ngoài thư mục dataset")
+            prior_json = prior_run / "raw" / "ibge" / "ibge_states_raw.json"
+            prior_wire = prior_run / "raw" / "ibge" / "ibge_response.bin"
+            decoded, data = decode_json_response(prior_wire)
+            validate_ibge(data)
+            if prior_json.read_bytes() != decoded:
+                raise ValueError("JSON snapshot không khớp response gốc")
+            json_path = run / "raw" / "ibge" / "ibge_states_raw.json"
+            try:
+                data, page_receipts, _ = fetch_geocoded_states(timeout, run / "raw" / "ibge", data)
+                normalized = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
+                json_path.write_bytes(normalized)
+                wire_path.write_bytes(normalized)
+                state_codes = validate_ibge(data)
+                manifest["ibge"].update(
+                    status="success_with_alternative_api", mode="geocoded_api_with_ibge_region_reference",
+                    source_label="Geocoded API (UF); vùng tham chiếu IBGE",
+                    endpoint="https://api.geocoded.me/v2/countries/BR/states",
+                    documentation="https://geocoded.me/docs/", license="CC BY 4.0 (data); MIT (code)",
+                    response_pages=page_receipts, region_reference_run_id=pointer["run_id"],
+                    primary_ibge_error=f"{type(exc).__name__}: {exc}",
+                    record_count=len(data), json_bytes=len(normalized), json_sha256=sha256_file(json_path),
+                    description="27 UF lấy trực tiếp từ Geocoded API; phân vùng lớn kế thừa snapshot IBGE đã xác minh",
+                    temporal_scope="UF lấy tại thời điểm chạy; vùng lớn đối chiếu snapshot IBGE nguồn",
+                    license_note="Ghi công Geocoded (CC BY 4.0) và IBGE cho phân vùng tham chiếu",
+                )
+                manifest["warnings"].append(f"IBGE timeout; Geocoded API thay thế trả 27 UF trực tiếp. Vùng lớn được nối từ snapshot IBGE run {pointer['run_id']}.")
+                LOG.info("Geocoded API dự phòng trả %s UF qua %s trang", len(data), len(page_receipts))
+            except Exception as alt_exc:
+                LOG.warning("Geocoded API dự phòng không truy cập được: %s: %s", type(alt_exc).__name__, alt_exc)
+                wire_path.write_bytes(prior_wire.read_bytes())
+                json_path.write_bytes(decoded)
+                manifest["ibge"].update(
+                    status="cached_fallback", mode="verified_local_snapshot",
+                    source_label="IBGE (snapshot đã lưu trước)",
+                    source_run_id=pointer["run_id"], live_api_error=f"{type(exc).__name__}: {exc}",
+                    alternative_api_error=f"{type(alt_exc).__name__}: {alt_exc}",
+                    record_count=len(data), json_bytes=len(decoded), json_sha256=sha256_file(json_path),
+                    description="27 đơn vị liên bang và 5 vùng lớn Brazil; nối Olist.customer_state = IBGE.sigla",
+                    temporal_scope="Snapshot đã lưu từ lần truy cập API trước; không phải dữ liệu tải trực tiếp trong lượt này",
+                    license_note="Giữ nguồn IBGE; chưa khẳng định mã giấy phép riêng cho endpoint",
+                )
+                manifest["warnings"].append(f"IBGE và Geocoded API đều không truy cập được; dùng snapshot đã xác minh từ run {pointer['run_id']}.")
+                LOG.info("Dùng snapshot IBGE đã xác minh: %s bản ghi; run nguồn %s", len(data), pointer["run_id"])
+            customers = run / "raw" / "olist" / "olist_customers_dataset.csv"
+            if manifest["olist"]["status"] == "success":
+                manifest["join_coverage"] = inspect_customer_coverage(customers, state_codes)
+        except Exception as fallback_exc:
+            manifest["ibge"]["status"] = "failed"
+            manifest["errors"].append(f"IBGE: {type(exc).__name__}: {exc}; snapshot fallback: {type(fallback_exc).__name__}: {fallback_exc}")
+            LOG.exception("Không thể dùng snapshot IBGE dự phòng")
     manifest["finished_at_utc"] = utc_now()
-    manifest["status"] = "success" if not manifest["errors"] else "partial_failure"
+    manifest["status"] = ("success_with_alternative_api" if manifest["ibge"]["status"] == "success_with_alternative_api" and not manifest["errors"]
+                          else "success_with_cached_reference" if manifest["ibge"]["status"] == "cached_fallback" and not manifest["errors"]
+                          else "success" if not manifest["errors"] else "partial_failure")
     LOG.info("[4/5] Ghi nguồn, mô tả raw, data dictionary và checksum")
     create_reports(run, manifest)
-    if manifest["status"] == "success":
+    if manifest["status"] in ("success", "success_with_alternative_api", "success_with_cached_reference"):
         write_json(output_root.parent / "latest_success.json", {
             "run_id": run_id, "run_path": run.relative_to(output_root.parent).as_posix(),
         })
-    LOG.info("[5/5] %s", "HOÀN THÀNH" if not manifest["errors"] else "CÓ LỖI - xem log/manifest")
+    LOG.info("[5/5] %s", "HOÀN THÀNH (Geocoded API + vùng IBGE tham chiếu)" if manifest["status"] == "success_with_alternative_api" else "HOÀN THÀNH (dùng snapshot IBGE đã lưu)" if manifest["status"] == "success_with_cached_reference" else "HOÀN THÀNH" if not manifest["errors"] else "CÓ LỖI - xem log/manifest")
     total = sum(row["record_count"] for row in manifest["olist"]["files"])
     LOG.info("Olist: %s record | IBGE: %s record", f"{total:,}", manifest["ibge"].get("record_count", 0))
     LOG.info("Thông tin dữ liệu: %s", run / "THONG_TIN_DU_LIEU.md")
@@ -405,7 +504,7 @@ def main():
         parser.error("timeout phải lớn hơn 0")
     run, manifest = collect(args.output_root, args.timeout, args.local_zip)
     print("\nKẾT QUẢ ĐÃ LƯU TẠI:", run, flush=True)
-    return 0 if manifest["status"] == "success" else 1
+    return 0 if manifest["status"] in ("success", "success_with_alternative_api", "success_with_cached_reference") else 1
 
 
 if __name__ == "__main__":

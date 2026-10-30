@@ -232,7 +232,7 @@ Object.entries(boolFields).forEach(([coll, fields]) => {
 
 // BƯỚC 4: TẠO HỆ THỐNG INDEX TRÊN DATABASE BigData
 // ---------------------------------------------------------------------
-print("\n--- BƯỚC 4: TẠO INDEXES TRÊN BigData ---");
+print("\n--- BƯỚC 4: TẠO INDEXES TRÊN " + db.getName() + " ---");
 db.olist_customers_clean.createIndex({ customer_id: 1 }, { unique: true });
 db.olist_orders_clean.createIndex({ order_id: 1 }, { unique: true });
 db.olist_products_clean.createIndex({ product_id: 1 }, { unique: true });
@@ -261,12 +261,16 @@ print("\n=== HOÀN TẤT ĐỊNH KIỂU VÀ TẠO INDEX TRÊN DATABASE " + db.ge
 db = db.getSiblingDB(CONFIG.dbName);
 
 print("\n=======================================================================");
-print("   BÁO CÁO AUDIT DỮ LIỆU VÀ ĐỐI SOÁT BẰNG CHỨNG (DATABASE: BigData)");
+print("   BÁO CÁO AUDIT DỮ LIỆU VÀ ĐỐI SOÁT BẰNG CHỨNG (DATABASE: " + db.getName() + ")");
 print("=======================================================================");
 
 var auditStatus = true;
+var auditCheckCount = 0;
+var auditPassedCount = 0;
 
 function logResult(category, checkName, passCondition, detailMsg) {
+  auditCheckCount++;
+  if (passCondition) auditPassedCount++;
   var tag = passCondition ? "[PASS]" : "[FAIL]";
   print(" " + tag + " " + category.padEnd(20) + " | " + checkName);
   if (detailMsg) print("      └─ Details: " + detailMsg);
@@ -313,8 +317,13 @@ var orphanItems = db.olist_order_items_clean.aggregate([
 logResult("Referential Check", "Order Items mồ côi order_id == 0", orphanItems === 0, "Orphans: " + orphanItems);
 
 print("\n=======================================================================");
-print(" KẾT LUẬN AUDIT TOÀN BỘ CSDL BigData: " + (auditStatus ? "ĐẠT (PASS 100%)" : "KHÔNG ĐẠT (FAIL)"));
+print(" KẾT QUẢ CÁC KIỂM TRA TRÊN " + db.getName() + ": " +
+      auditPassedCount + "/" + auditCheckCount + " ĐẠT; " +
+      (auditStatus ? "PASS" : "FAIL"));
 print("=======================================================================\n");
+if (!auditStatus) {
+  throw new Error("AUDIT FAIL: Có kiểm tra không đạt trên " + db.getName());
+}
 
 db = db.getSiblingDB(CONFIG.dbName);
 

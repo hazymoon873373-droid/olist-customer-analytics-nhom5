@@ -48,13 +48,18 @@ def audit(run):
               and program.is_file(), str(program))
 
     olist, ibge = manifest["olist"], manifest["ibge"]
-    check("Tải Olist qua HTTPS từ Kaggle", olist.get("mode") == "https_kaggle_download"
-          and olist.get("http_receipt", {}).get("http_status") == 200,
-          olist.get("http_receipt", {}).get("requested_url", olist.get("mode")))
-    check("Gọi IBGE API trực tiếp", ibge.get("mode") == "https_api"
-          and ibge.get("http_receipt", {}).get("http_status") == 200,
-          ibge.get("endpoint"))
-    check("Trạng thái chạy hoàn tất", manifest["status"] == "success" and not manifest["errors"],
+    olist_live = olist.get("mode") == "https_kaggle_download" and olist.get("http_receipt", {}).get("http_status") == 200
+    olist_local = olist.get("mode") == "local_zip_explicit"
+    check("Có ZIP Olist nguồn để tái lập", olist_live or olist_local,
+          "tải mới từ Kaggle" if olist_live else "dùng ZIP cục bộ; không ghi nhận tải mới" if olist_local else olist.get("mode"))
+    ibge_mode = ibge.get("mode")
+    ibge_ok = ((ibge_mode == "https_api" and ibge.get("http_receipt", {}).get("http_status") == 200)
+               or (ibge_mode == "geocoded_api_with_ibge_region_reference" and
+                   sum(page.get("records", 0) for page in ibge.get("response_pages", [])) == 27)
+               or (ibge_mode == "verified_local_snapshot" and bool(ibge.get("source_run_id"))))
+    check("Nguồn địa lý có 27 UF và provenance", ibge_ok,
+          f"{ibge_mode}; endpoint={ibge.get('endpoint')}; snapshot={ibge.get('region_reference_run_id', ibge.get('source_run_id', 'n/a'))}")
+    check("Trạng thái chạy hoàn tất", manifest["status"] in ("success", "success_with_alternative_api", "success_with_cached_reference") and not manifest["errors"],
           f"Run {manifest['run_id']}; kết thúc {manifest['finished_at_utc']}")
 
     file_stats = []
@@ -62,8 +67,9 @@ def audit(run):
     archive_path = run / "raw/olist/brazilian-ecommerce.zip"
     with archive_path.open("rb") as stream:
         archive_hash = digest(stream)
-    check("ZIP gốc đúng checksum HTTP", archive_hash == olist["archive_sha256"]
-          == olist.get("http_receipt", {}).get("response_sha256"), archive_hash)
+    http_hash = olist.get("http_receipt", {}).get("response_sha256")
+    check("ZIP gốc khớp checksum đã ghi", archive_hash == olist["archive_sha256"]
+          and (not http_hash or archive_hash == http_hash), archive_hash)
     with zipfile.ZipFile(archive_path) as archive:
         for name, spec in CATALOG.items():
             path = run / "raw/olist" / name
@@ -99,11 +105,47 @@ def audit(run):
         wire_hash = digest(stream)
     with raw_json.open("rb") as stream:
         json_hash = digest(stream)
-    check("Lưu response IBGE và JSON raw nguyên vẹn",
-          wire_hash == ibge["http_receipt"]["response_sha256"]
+    if ibge.get("mode") == "https_api":
+        source_hash_ok = wire_hash == ibge.get("http_receipt", {}).get("response_sha256")
+        provenance_detail = "response trực tiếp khớp HTTP receipt"
+    elif ibge.get("mode") == "geocoded_api_with_ibge_region_reference":
+        receipts = ibge.get("response_pages", [])
+        pages_ok = bool(receipts)
+        for receipt in receipts:
+            page_path = run / "raw/ibge" / receipt["file"]
+            if not page_path.is_file():
+                pages_ok = False
+                break
+            with page_path.open("rb") as stream:
+                pages_ok &= digest(stream) == receipt["sha256"]
+        data_root = run.parent.parent
+        source_run = (data_root / "runs" / ibge.get("region_reference_run_id", "")).resolve()
+        region_ref = source_run / "raw/ibge/ibge_states_raw.json"
+        inside_dataset = data_root.resolve() in source_run.parents
+        region_ok = False
+        if inside_dataset and region_ref.is_file():
+            reference = {row["sigla"]: row["regiao"] for row in json.loads(region_ref.read_text(encoding="utf-8"))}
+            region_ok = all(reference.get(row["sigla"]) == row["regiao"] for row in states)
+        source_hash_ok = pages_ok and region_ok
+        provenance_detail = f"Geocoded payload pages checksum verified; region mapping source run {ibge.get('region_reference_run_id')}"
+    elif ibge.get("mode") == "verified_local_snapshot":
+        dataset_root = run.parent.parent
+        source_run = (dataset_root / "runs" / ibge.get("source_run_id", "")).resolve()
+        source_wire = source_run / "raw/ibge/ibge_response.bin"
+        source_json = source_run / "raw/ibge/ibge_states_raw.json"
+        source_hash_ok = (dataset_root.resolve() in source_run.parents and
+                          source_wire.is_file() and source_json.is_file() and
+                          source_wire.read_bytes() == wire.read_bytes() and
+                          source_json.read_bytes() == raw_json.read_bytes())
+        provenance_detail = f"snapshot khớp run nguồn {ibge.get('source_run_id')}"
+    else:
+        source_hash_ok = False
+        provenance_detail = f"mode nguồn không được hỗ trợ: {ibge.get('mode')}"
+    check("Lưu dữ liệu API địa lý và provenance nguyên vẹn",
+          source_hash_ok
           and json_hash == ibge["json_sha256"] and raw_json.read_bytes() == decoded
           and len(states) == ibge["record_count"],
-          f"{len(states)} record; {raw_json.stat().st_size:,} byte JSON")
+          f"{len(states)} record; {raw_json.stat().st_size:,} byte JSON; {provenance_detail}")
     coverage = inspect_customer_coverage(run / "raw/olist/olist_customers_dataset.csv", codes)
     check("Nguồn phụ ghép được với Olist", coverage == manifest["join_coverage"]
           and coverage["coverage_percent"] == 100,
@@ -145,7 +187,9 @@ def audit(run):
                "Đường dẫn hiện tại: `dataset/runs/` trong thư mục Huy_ThuThap_Olist. "
                "Các cửa sổ, liên kết hoặc log cũ trỏ tới `data/runs/` cần mở lại ở đường dẫn hiện tại. "
                "Không cần tải lại dữ liệu để khắc phục thông báo Location is not available.", "",
-               "Đã thực hiện 5 yêu cầu: tải Olist từ Kaggle, gọi API phù hợp, lưu raw, đếm record, ghi nguồn và mô tả raw.",
+               ("Đã lưu 9 CSV Olist và dữ liệu IBGE; lượt chạy này đã gọi API trực tiếp."
+                if manifest.get("ibge", {}).get("mode") == "https_api" else
+                "Đã lưu 9 CSV Olist và snapshot IBGE đã xác minh; lượt chạy này không truy cập được API trực tiếp, chi tiết ở source_manifest.json."),
                "", "Đối chiếu LabF: có 2 nguồn, có chương trình thu thập, dữ liệu trên 5.000 record. "
                "Phần lưu DBMS, làm sạch, thiết kế MongoDB và phân tích/ML cần nhóm tiếp tục thực hiện theo phân công.",
                "", "Tài liệu crawl của thầy Khải minh họa Scrapy/HTML và lưu MongoDB Atlas. "
@@ -159,6 +203,8 @@ def audit(run):
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path)
     args = parser.parse_args()

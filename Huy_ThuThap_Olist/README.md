@@ -2,7 +2,7 @@
 
 Môn ABDA433708. Đề tài: phân tích khách hàng và dự báo nguy cơ không mua lại trên Olist bằng MongoDB và Machine Learning.
 
-Phần Huy đã thực hiện: **tải Olist từ Kaggle → gọi API IBGE → lưu raw → đếm record → ghi nguồn và mô tả dữ liệu**. Raw đã tải thật qua Internet trong VS Code ngày 20/10/2026 (giờ Việt Nam). Đây là dataset giao dịch lịch sử, không phải đơn hàng mới tại ngày tải.
+Phần Huy đã thực hiện: **tải Olist từ Kaggle → gọi API IBGE (Geocoded dự phòng khi timeout) → lưu raw → đếm record → ghi nguồn và mô tả dữ liệu**. Raw đã tải thật qua Internet trong VS Code ngày 20/10/2026 (giờ Việt Nam). Đây là dataset giao dịch lịch sử, không phải đơn hàng mới tại ngày tải.
 
 ## 1. Cấu trúc bàn giao
 
@@ -48,11 +48,11 @@ Hai lần tải cũ, cache Python và báo cáo trùng đã được chuyển ra
 | product_category_name_translation.csv | 71 |
 | **Tổng record Olist** | **1.550.922** |
 
-API IBGE có **27 đơn vị liên bang, 5 vùng lớn**. Liên kết `customer_state = sigla` khớp **99.441/99.441 bản ghi khách hàng**. Tổng 9 CSV là tổng nhiều bảng; không phải 1,55 triệu đơn hoặc khách hàng duy nhất. Dictionary có 58 trường, gồm trường lồng của JSON IBGE.
+API địa lý có **27 đơn vị liên bang, 5 vùng lớn**. Mặc định chương trình gọi IBGE; khi IBGE timeout, Geocoded API cung cấp danh sách UF theo phân trang, còn nhãn 5 vùng lấy từ snapshot IBGE đã xác minh. Manifest lưu nguồn từng trang, checksum và cảnh báo để không nhầm dữ liệu dự phòng với phản hồi IBGE trực tiếp. Liên kết `customer_state = sigla` khớp **99.441/99.441 bản ghi khách hàng**. Tổng 9 CSV là tổng nhiều bảng; không phải 1,55 triệu đơn hoặc khách hàng duy nhất. Dictionary có 58 trường, gồm trường lồng của JSON IBGE.
 
 ## 3. Chạy và kiểm tra trên máy thành viên khác
 
-**Mở dữ liệu trên máy Huy:** vào `D:\Big Data\Huy_ThuThap_Olist\dataset\runs\20261019T171446Z_e35970\raw\olist` để xem 9 CSV và ZIP gốc. Dữ liệu API nằm ở thư mục `raw\ibge` cạnh đó.
+**Mở dữ liệu trên máy Huy:** vào `D:\Big Data\Huy_ThuThap_Olist\dataset\runs\20261019T171446Z_e35970\raw\olist` để xem 9 CSV và ZIP gốc. Dữ liệu địa lý nằm ở thư mục `raw\ibge` cạnh đó; nếu dùng nguồn dự phòng, các payload Geocoded từng trang được lưu và ghi trong manifest.
 
 Nếu Explorer báo **Location is not available** với đường dẫn `Huy_ThuThap_Olist\data\runs`, cửa sổ hoặc liên kết đó đang dùng vị trí trước khi dọn. Đường dẫn hiện tại là `Huy_ThuThap_Olist\dataset\runs`. Đóng thông báo, mở lại thư mục `dataset` ngay trong bộ bàn giao. Không cần tải lại hoặc tạo thêm bản sao dữ liệu.
 
@@ -67,7 +67,7 @@ python -B source-code/verify_run.py
 # Kiểm tra mã nguồn:
 python -B -m unittest discover -s source-code/tests -v
 
-# Tải mới cả Kaggle và API IBGE:
+# Tải mới Kaggle; gọi API IBGE, tự chuyển Geocoded nếu IBGE timeout:
 python -B source-code/collect_all.py
 ```
 
